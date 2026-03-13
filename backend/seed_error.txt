@@ -1,0 +1,10 @@
+{}
+TypeError: next is not a function
+    at model.<anonymous> (A:\skill\web development\wd\backend-oneshot\MbmCanteenHub\backend\src\models\User.js:39:3)
+    at async Kareem.execPre (A:\skill\web development\wd\backend-oneshot\MbmCanteenHub\backend\node_modules\kareem\index.js:70:24)
+    at async model.$__save (A:\skill\web development\wd\backend-oneshot\MbmCanteenHub\backend\node_modules\mongoose\lib\model.js:376:5)
+    at async model.save (A:\skill\web development\wd\backend-oneshot\MbmCanteenHub\backend\node_modules\mongoose\lib\model.js:642:5)
+    at async A:\skill\web development\wd\backend-oneshot\MbmCanteenHub\backend\node_modules\mongoose\lib\model.js:2778:9
+    at async Promise.all (index 0)
+    at async Function.create (A:\skill\web development\wd\backend-oneshot\MbmCanteenHub\backend\node_modules\mongoose\lib\model.js:2763:11)
+    at async seedAdmin (A:\skill\web development\wd\backend-oneshot\MbmCanteenHub\backend\scripts\seedAdmin.js:20:9)
