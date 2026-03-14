@@ -1,44 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import API from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
-    const [formData, setFormData] = useState({
-        email: '',
-        password: ''
-    });
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const { login } = useAuth();
-    const navigate = useNavigate();
-
-    const { email, password } = formData;
-
-    useEffect(() => {
-        document.body.classList.add('auth-scroll-lock');
-
-        return () => {
-            document.body.classList.remove('auth-scroll-lock');
-        };
-    }, []);
-
-    const onChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
+    // ... rest of state stays same ...
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
         try {
-            const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, {
+            const { data } = await API.post('/auth/login', {
                 email,
                 password
             });
 
-            login(res.data, res.data.token);
+            login(data, data.token);
             navigate('/');
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed. Please try again.');
