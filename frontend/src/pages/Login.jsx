@@ -4,19 +4,41 @@ import API from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
-    // ... rest of state stays same ...
+    const [formData, setFormData] = useState({
+        email: '',
+        password: ''
+    });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const { login } = useAuth();
+    const navigate = useNavigate();
+
+    const { email, password } = formData;
+
+    useEffect(() => {
+        document.body.classList.add('auth-scroll-lock');
+
+        return () => {
+            document.body.classList.remove('auth-scroll-lock');
+        };
+    }, []);
+
+    const onChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
         try {
-            const { data } = await API.post('/auth/login', {
+            const res = await API.post('/auth/login', {
                 email,
                 password
             });
 
-            login(data, data.token);
+            login(res.data, res.data.token);
             navigate('/');
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed. Please try again.');
