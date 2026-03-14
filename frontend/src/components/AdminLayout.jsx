@@ -12,7 +12,6 @@ const AdminLayout = () => {
                 <Link to="/admin/dashboard" className={isActive('/admin/dashboard')}>Dashboard</Link>
                 <Link to="/admin/menu" className={isActive('/admin/menu')}>Manage Menu</Link>
                 <Link to="/admin/orders" className={isActive('/admin/orders')}>Orders</Link>
-                <Link to="/admin/inventory" className={isActive('/admin/inventory')}>Inventory</Link>
                 <Link to="/menu">Back to Site</Link>
             </aside>
 

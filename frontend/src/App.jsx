@@ -22,7 +22,6 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManageMenu from "./pages/admin/ManageMenu";
 import ManageOrders from "./pages/admin/ManageOrders";
-import ManageInventory from "./pages/admin/ManageInventory";
 
 function App() {
   return (
@@ -83,7 +82,6 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="menu" element={<ManageMenu />} />
           <Route path="orders" element={<ManageOrders />} />
-          <Route path="inventory" element={<ManageInventory />} />
         </Route>
 
         </Routes>

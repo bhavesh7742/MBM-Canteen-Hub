@@ -1511,3 +1511,83 @@ body.auth-scroll-lock {
     font-size: var(--font-3xl);
   }
 }
+
+/* ============ MODAL & CONFIRMATION POPUP ============ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--space-xl);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  background: var(--bg-card);
+  backdrop-filter: blur(40px);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 500px;
+  padding: var(--space-2xl);
+  box-shadow: var(--shadow-lg), 0 0 50px rgba(255, 69, 0, 0.1);
+  position: relative;
+  animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-xl);
+}
+
+.modal-header h2 {
+  font-size: var(--font-2xl);
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  background: none;
+  font-size: 1.5rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.modal-close:hover {
+  color: var(--primary);
+}
+
+.confirmation-popup {
+  text-align: center;
+}
+
+.confirmation-popup h3 {
+  font-size: var(--font-xl);
+  margin-bottom: var(--space-lg);
+  color: var(--text-primary);
+}
+
+.confirmation-actions {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  margin-top: var(--space-xl);
+}

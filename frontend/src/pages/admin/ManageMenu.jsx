@@ -141,7 +141,12 @@ const ManageMenu = () => {
                                 <label>Image URL</label>
                                 <input className="form-input" value={form.imageURL} onChange={(e) => setForm({ ...form, imageURL: e.target.value })} />
                             </div>
-                            <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
+                            <div className="form-group">
+                                <label>Stock Quantity</label>
+                                <input className="form-input" type="number" min="0" value={form.inventoryQuantity} onChange={(e) => setForm({ ...form, inventoryQuantity: e.target.value })} required />
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Setting stock to 0 will mark dish as sold out.</p>
+                            </div>
+                            <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px', opacity: 0.7 }}>
                                 <input 
                                     type="checkbox" 
                                     id="available"
@@ -149,7 +154,7 @@ const ManageMenu = () => {
                                     onChange={(e) => setForm({ ...form, available: e.target.checked })} 
                                     style={{ width: '20px', height: '20px' }}
                                 />
-                                <label htmlFor="available" style={{ marginBottom: 0 }}>Available for Purchase</label>
+                                <label htmlFor="available" style={{ marginBottom: 0 }}>Force Available (Override Stock)</label>
                             </div>
                             <button type="submit" className="btn btn-primary btn-full">{editDish ? 'Update Dish' : 'Add Dish'}</button>
                         </form>

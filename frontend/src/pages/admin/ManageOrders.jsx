@@ -19,6 +19,8 @@ const ManageOrders = () => {
     const [loading, setLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState('');
 
+    const [confirmDelete, setConfirmDelete] = useState(null);
+
     useEffect(() => {
         fetchOrders();
         socket.connect();
@@ -40,6 +42,31 @@ const ManageOrders = () => {
             console.error(err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleStatusUpdate = (orderId, status) => {
+        if (status === 'delivered') {
+            setConfirmDelete(orderId);
+        } else {
+            updateStatus(orderId, status);
+        }
+    };
+
+    const confirmRemoval = async () => {
+        try {
+            // First mark as delivered (Completed) in MongoDB
+            await API.put(`/admin/orders/${confirmDelete}/status`, { status: 'delivered' });
+            
+            // Then remove from DB as requested ("remove from list")
+            await API.delete(`/admin/orders/${confirmDelete}`);
+            
+            setConfirmDelete(null);
+            fetchOrders();
+        } catch (err) {
+            console.error('Order process error:', err);
+            const msg = err.response?.data?.message || err.message || 'Failed to process order completion';
+            alert(`Error: ${msg}`);
         }
     };
 
@@ -113,7 +140,7 @@ const ManageOrders = () => {
                                     <select
                                         className="form-select"
                                         value={order.status}
-                                        onChange={(e) => updateStatus(order._id, e.target.value)}
+                                        onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
                                         style={{ width: 'auto', padding: '6px 32px 6px 10px', fontSize: '0.8rem' }}
                                     >
                                         {STATUS_OPTIONS.map((option) => (
@@ -131,6 +158,18 @@ const ManageOrders = () => {
                 <div className="empty-state" style={{ marginTop: 'var(--space-xl)' }}>
                     <div className="emoji">No orders</div>
                     <h2>No orders found</h2>
+                </div>
+            )}
+
+            {confirmDelete && (
+                <div className="modal-overlay">
+                    <div className="modal confirmation-popup">
+                        <h3>Are you sure you want to remove this order?</h3>
+                        <div className="confirmation-actions">
+                            <button className="btn btn-primary" onClick={confirmRemoval}>Yes</button>
+                            <button className="btn btn-secondary" onClick={() => setConfirmDelete(null)}>Cancel</button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

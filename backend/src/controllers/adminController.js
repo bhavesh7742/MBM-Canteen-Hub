@@ -16,7 +16,8 @@ const addDish = async (req, res) => {
             price,
             description: description || '',
             imageURL: imageURL || undefined,
-            inventoryQuantity: inventoryQuantity || 50
+            inventoryQuantity: inventoryQuantity || 0,
+            available: (inventoryQuantity || 0) > 0
         });
         // Emit socket event
         const io = req.app.get('io');
@@ -37,9 +38,14 @@ const updateDish = async (req, res) => {
         if (!dish) {
             return res.status(404).json({ message: 'Dish not found' });
         }
+        const updateData = { ...req.body };
+        if (updateData.inventoryQuantity !== undefined) {
+            updateData.available = Number(updateData.inventoryQuantity) > 0;
+        }
+
         const updatedDish = await Dish.findByIdAndUpdate(
             req.params.id,
-            { ...req.body },
+            updateData,
             { new: true, runValidators: true }
         );
         const io = req.app.get('io');
@@ -82,7 +88,11 @@ const getAllOrders = async (req, res) => {
         const orders = await Order.find(filter)
             .populate('userId', 'name email')
             .sort({ createdAt: -1 });
-        res.json(orders);
+
+        // Filter out orders where user data does NOT exist (N/A users)
+        const validOrders = orders.filter(order => order.userId !== null);
+        
+        res.json(validOrders);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
@@ -126,6 +136,23 @@ const updateOrderStatus = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
+
+// @desc    Delete an order
+// @route   DELETE /api/admin/orders/:id
+// @access  Admin
+const deleteOrder = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+        await Order.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Order removed successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
 // ==================== INVENTORY MANAGEMENT ====================
 // @desc    Update dish inventory
 // @route   PUT /api/admin/inventory/:id
@@ -184,6 +211,6 @@ module.exports = {
     deleteDish,
     getAllOrders,
     updateOrderStatus,
-    updateInventory,
+    deleteOrder,
     getDashboardStats
 };
