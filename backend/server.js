@@ -41,6 +41,10 @@ app.use('/api/menu', menuRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
+// Root Route
+app.get('/', (req, res) => {
+    res.json({ status: 'ok', message: 'Welcome to MBM Canteen Hub API 🚀' });
+});
 // Health Check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'MBM Canteen Hub API is running 🚀' });
