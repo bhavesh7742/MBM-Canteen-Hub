@@ -43,7 +43,7 @@ const Navbar = () => {
                                 </Link>
                             )}
                              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                                 {user?.pickupCode || "User"}
+                                 {user?.name || "User"}
                              </span>
                              <button className="btn btn-sm btn-outline" onClick={handleLogout}>
                                  Logout
