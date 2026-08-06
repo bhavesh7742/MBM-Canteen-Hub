@@ -34,7 +34,7 @@ jobs:
         working-directory: frontend
         run: npm run build
         env:
-          VITE_API_URL: https://api.mbmcanteen.yourdomain.com
+          VITE_API_URL: https://api.mbmcanteen.local.com
 
       - name: Install backend dependencies
         working-directory: backend

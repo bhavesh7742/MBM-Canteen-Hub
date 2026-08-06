@@ -68,7 +68,7 @@ jobs:
         working-directory: frontend
         run: npm run build
         env:
-          VITE_API_URL: https://api.mbmcanteen.yourdomain.com
+          VITE_API_URL: https://api.mbmcanteen.local.com
 
       # Step 6: Install only production backend deps (mirrors Docker image)
       - name: Install backend dependencies

@@ -862,6 +862,8 @@ spec:
       - args:
         - --cluster-name=mbm-canteen
         - --ingress-class=alb
+        - --aws-region=ap-south-1
+        - --aws-vpc-id=vpc-05372bddfaf00d808
         image: public.ecr.aws/eks/aws-load-balancer-controller:v2.7.0
         livenessProbe:
           failureThreshold: 2

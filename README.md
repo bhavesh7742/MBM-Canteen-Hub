@@ -223,7 +223,7 @@ cd ..
 # Build & push FRONTEND
 cd frontend
 docker build \
-    --build-arg VITE_API_URL=https://mbmcanteen.yourdomain.com \
+    --build-arg VITE_API_URL=https://mbmcanteen.local.com \
     -t mbm-canteen-frontend .
 docker tag mbm-canteen-frontend:latest $ECR_URL/mbm-canteen-frontend:latest
 docker push $ECR_URL/mbm-canteen-frontend:latest
@@ -349,7 +349,7 @@ aws iam create-access-key --user-name mbm-github-actions
 #    AWS_ACCESS_KEY_ID      = (from step 2)
 #    AWS_SECRET_ACCESS_KEY  = (from step 2)
 #    AWS_ACCOUNT_ID         = (your 12-digit account ID)
-#    VITE_API_URL           = https://mbmcanteen.yourdomain.com
+#    VITE_API_URL           = https://mbmcanteen.local.com
 
 # 4. Now every push to main auto-deploys!
 git add .
@@ -374,7 +374,7 @@ kubectl get svc -n production
 kubectl get ingress -n production
 
 # Test the live API
-curl https://mbmcanteen.yourdomain.com/api/health
+curl https://mbmcanteen.local.com/api/health
 
 # Check Grafana is up
 kubectl get svc grafana-service -n monitoring

@@ -7,12 +7,12 @@ metadata:
   # For sensitive data (passwords, API keys), use Kubernetes Secret instead
 data:
   # Replace this with your actual production domain
-  # e.g. https://mbmcanteen.yourdomain.com
-  frontend-url: "https://mbmcanteen.yourdomain.com"
+  # e.g. https://mbmcanteen.local.com
+  frontend-url: "https://mbmcanteen.local.com"
 
   # The environment mode — controls logging format and error details
   node-env: "production"
 
   # CORS: which domains the backend accepts requests from
   # Must match the domain students will use to open the site
-  socket-cors-origin: "https://mbmcanteen.yourdomain.com"
+  socket-cors-origin: "https://mbmcanteen.local.com"

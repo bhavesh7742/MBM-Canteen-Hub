@@ -7,7 +7,7 @@ metadata:
     # ─── ALB Ingress Controller ───────────────────────────────────────────────
     # Tells EKS to use the AWS Load Balancer Controller to provision an ALB
     # Without this, Kubernetes won't know to create an AWS Load Balancer
-    kubernetes.io/ingress.class: alb
+    
 
     # internet-facing = creates a public ALB (students reach it from internet)
     # internal        = accessible only within the VPC (for internal tools)
@@ -27,12 +27,12 @@ metadata:
     # Replace YOUR_ACM_CERTIFICATE_ARN with the actual ARN from AWS Certificate Manager
     # How to get it:
     #   Step 1: AWS Console → Certificate Manager → Request a public certificate
-    #   Step 2: Enter domain name (e.g., mbmcanteen.yourdomain.com)
+    #   Step 2: Enter domain name (e.g., mbmcanteen.local.com)
     #   Step 3: Choose DNS validation → Add the CNAME record to your DNS
     #   Step 4: Wait ~5 minutes for validation → Copy the ARN
     # OR via CLI:
-    #   aws acm request-certificate --domain-name mbmcanteen.yourdomain.com --validation-method DNS --region ap-south-1
-    alb.ingress.kubernetes.io/certificate-arn: YOUR_ACM_CERTIFICATE_ARN
+    #   aws acm request-certificate --domain-name mbmcanteen.local.com --validation-method DNS --region ap-south-1
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-south-1:941960167673:certificate/27fd4a32-84f9-4949-88ad-e0e54518c740
 
     # Redirect all HTTP :80 traffic to HTTPS :443 automatically
     alb.ingress.kubernetes.io/ssl-redirect: "443"
@@ -50,16 +50,17 @@ metadata:
     alb.ingress.kubernetes.io/healthcheck-path: /api/health
 
 spec:
+  ingressClassName: alb
   rules:
     # ─── Domain Routing ──────────────────────────────────────────────────────
-    # Replace mbmcanteen.yourdomain.com with your actual domain.
+    # Replace mbmcanteen.local.com with your actual domain.
     # After the ALB is created, get its DNS name:
     #   kubectl get ingress -n production
     # Then create a CNAME record in your DNS pointing to the ALB address.
     #
     # If you do NOT have a domain, you can remove this 'host:' line and
     # the ALB will accept traffic from any domain (useful for testing).
-    - host: mbmcanteen.yourdomain.com
+    - host: mbmcanteen.local.com
       http:
         paths:
           # /api/* → Backend (Node.js Express + Socket.io)

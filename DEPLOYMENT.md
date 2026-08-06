@@ -153,7 +153,7 @@ docker push $ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/mbm-canteen-backend:lat
 
 # Build and push frontend
 docker build \
-    --build-arg VITE_API_URL=https://api.mbmcanteen.yourdomain.com \
+    --build-arg VITE_API_URL=https://api.mbmcanteen.local.com \
     -t mbm-canteen-frontend ./frontend
 docker tag mbm-canteen-frontend:latest \
     $ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/mbm-canteen-frontend:latest
@@ -266,10 +266,10 @@ echo "Replace YOUR_AWS_ACCOUNT_ID with: $ACCOUNT_ID"
 Replace `YOUR_AWS_ACCOUNT_ID` with your account ID.
 
 **In `k8s/production/configmap.yaml`:**
-Replace `mbmcanteen.yourdomain.com` with your actual domain name.
+Replace `mbmcanteen.local.com` with your actual domain name.
 
 **In `k8s/production/ingress.yaml`:**
-Replace `mbmcanteen.yourdomain.com` with your actual domain name.
+Replace `mbmcanteen.local.com` with your actual domain name.
 Replace `YOUR_ACM_CERTIFICATE_ARN` with your SSL certificate ARN (Step 16).
 
 ### Step 15: Create Kubernetes namespace
@@ -286,7 +286,7 @@ kubectl get namespaces
 
 1. Go to AWS Console → **Certificate Manager (ACM)**
 2. Click **Request certificate** → **Request a public certificate**
-3. Enter your domain: `mbmcanteen.yourdomain.com`
+3. Enter your domain: `mbmcanteen.local.com`
 4. Choose **DNS validation** → **Request**
 5. Click the certificate → **Create records in Route 53** (if using Route 53) OR add the CNAME records manually to your DNS provider
 6. Wait for status to become **Issued** (~5 minutes)
@@ -345,7 +345,7 @@ kubectl get ingress -n production
 
 # Expected output:
 # NAME          CLASS    HOSTS                    ADDRESS                           PORTS
-# mbm-ingress   <none>   mbmcanteen.yourdomain.com   k8s-prod-mbm-xxx.ap-south-1.elb.amazonaws.com   80, 443
+# mbm-ingress   <none>   mbmcanteen.local.com   k8s-prod-mbm-xxx.ap-south-1.elb.amazonaws.com   80, 443
 ```
 
 Copy the ADDRESS value — this is your ALB's DNS name.
@@ -375,7 +375,7 @@ Copy the ADDRESS value — this is your ALB's DNS name.
 
 ```bash
 # Wait for DNS to propagate, then:
-curl https://mbmcanteen.yourdomain.com/api/health
+curl https://mbmcanteen.local.com/api/health
 # Expected: {"status":"ok","message":"MBM Canteen Hub API is running 🚀"}
 
 # Check all pods are healthy
@@ -466,7 +466,7 @@ Add these secrets:
 | `AWS_ACCESS_KEY_ID` | Access key for `mbm-github-actions` user |
 | `AWS_SECRET_ACCESS_KEY` | Secret key for `mbm-github-actions` user |
 | `AWS_ACCOUNT_ID` | Your 12-digit AWS account ID |
-| `VITE_API_URL` | `https://mbmcanteen.yourdomain.com` |
+| `VITE_API_URL` | `https://mbmcanteen.local.com` |
 
 Now push to the `main` branch — the GitHub Actions pipeline will:
 1. ✅ Lint and build your code
