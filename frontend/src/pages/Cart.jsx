@@ -60,24 +60,27 @@ const Cart = () => {
                 </div>
                 <div className="cart-summary">
                     <h2>Order Summary</h2>
-                    {cart.items?.map((item) => (
-                        <div className="cart-summary-row" key={item.dishId?._id}>
-                            <span>{item.dishId?.name} × {item.quantity}</span>
-                            <span>₹{(item.dishId?.price || 0) * item.quantity}</span>
-                        </div>
-                    ))}
-                    <div className="cart-summary-row total">
-                        <span>Total</span>
-                        <span className="price">₹{cart.totalPrice?.toFixed(2)}</span>
+                    <div className="cart-summary-items">
+                        {cart.items?.map((item) => (
+                            <div className="cart-summary-row" key={item.dishId?._id}>
+                                <span>{item.dishId?.name} × {item.quantity}</span>
+                                <span>₹{(item.dishId?.price || 0) * item.quantity}</span>
+                            </div>
+                        ))}
                     </div>
-                    <button
-                        className="btn btn-primary btn-full btn-lg"
-                        style={{ marginTop: 'var(--space-lg)' }}
-                        onClick={handlePlaceOrder}
-                        disabled={placing}
-                    >
-                        {placing ? 'Placing Order...' : 'Place Order'}
-                    </button>
+                    <div className="cart-summary-checkout-bar">
+                        <div className="cart-summary-row total">
+                            <span>Total</span>
+                            <span className="price">₹{cart.totalPrice?.toFixed(2)}</span>
+                        </div>
+                        <button
+                            className="btn btn-primary btn-full btn-lg"
+                            onClick={handlePlaceOrder}
+                            disabled={placing}
+                        >
+                            {placing ? 'Placing Order...' : 'Place Order'}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 const FeedbackContext = createContext(null);
 
@@ -20,12 +20,10 @@ export const FeedbackProvider = ({ children }) => {
         resolve: null
     });
 
-    // Toast logic
     const showToast = useCallback((message, type = 'success') => {
         const id = Date.now() + Math.random().toString(36).substr(2, 9);
         setToasts((prev) => [...prev, { id, message, type }]);
 
-        // Auto dismiss after 3 seconds
         setTimeout(() => {
             setToasts((prev) => prev.filter((t) => t.id !== id));
         }, 3000);
@@ -35,7 +33,6 @@ export const FeedbackProvider = ({ children }) => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
     }, []);
 
-    // Custom confirm dialog (Promise-based)
     const showConfirm = useCallback((title, message) => {
         return new Promise((resolve) => {
             setModal({
@@ -48,7 +45,6 @@ export const FeedbackProvider = ({ children }) => {
         });
     }, []);
 
-    // Custom alert dialog (Promise-based, only OK button)
     const showAlert = useCallback((title, message) => {
         return new Promise((resolve) => {
             setModal({
@@ -61,15 +57,30 @@ export const FeedbackProvider = ({ children }) => {
         });
     }, []);
 
-    const handleConfirm = () => {
+    const handleConfirm = useCallback(() => {
         if (modal.resolve) modal.resolve(true);
         setModal((prev) => ({ ...prev, isOpen: false, resolve: null }));
-    };
+    }, [modal.resolve]);
 
-    const handleCancel = () => {
+    const handleCancel = useCallback(() => {
         if (modal.resolve) modal.resolve(false);
         setModal((prev) => ({ ...prev, isOpen: false, resolve: null }));
-    };
+    }, [modal.resolve]);
+
+    useEffect(() => {
+        if (!modal.isOpen) return;
+        document.body.classList.add('modal-open');
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                handleCancel();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            document.body.classList.remove('modal-open');
+        };
+    }, [modal.isOpen, handleCancel]);
 
     return (
         <FeedbackContext.Provider value={{ showToast, showConfirm, showAlert }}>
@@ -92,21 +103,35 @@ export const FeedbackProvider = ({ children }) => {
 
             {/* Premium Modal Confirmation Overlay */}
             {modal.isOpen && (
-                <div className="custom-modal-overlay">
-                    <div className="custom-modal-card">
+                <div 
+                    className="custom-modal-overlay" 
+                    onClick={handleCancel}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="confirm-modal-title"
+                >
+                    <div className="custom-modal-card" onClick={(e) => e.stopPropagation()}>
                         <div className="custom-modal-header">
-                            <h3>{modal.title}</h3>
+                            <h3 id="confirm-modal-title">{modal.title}</h3>
                         </div>
                         <div className="custom-modal-body">
                             <p>{modal.message}</p>
                         </div>
                         <div className="custom-modal-footer">
                             {!modal.isAlert && (
-                                <button className="btn btn-sm btn-secondary" onClick={handleCancel}>
+                                <button 
+                                    className="btn btn-sm btn-secondary" 
+                                    onClick={handleCancel}
+                                    aria-label="Cancel action"
+                                >
                                     Cancel
                                 </button>
                             )}
-                            <button className="btn btn-sm btn-primary" onClick={handleConfirm}>
+                            <button 
+                                className="btn btn-sm btn-primary" 
+                                onClick={handleConfirm}
+                                aria-label="Confirm action"
+                            >
                                 {modal.isAlert ? 'OK' : 'Confirm'}
                             </button>
                         </div>

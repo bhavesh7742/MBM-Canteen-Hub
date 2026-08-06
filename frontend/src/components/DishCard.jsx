@@ -51,6 +51,7 @@ const DishCard = ({ dish }) => {
                     src={dish.imageURL || "/placeholder-food.png"}
                     alt={dish.name}
                     className="dish-card-image"
+                    loading="lazy"
                 />
                 <span className="dish-card-badge">{dish.category}</span>
                 <button

@@ -1,0 +1,96 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mbm-ingress
+  namespace: production
+  annotations:
+    # ─── ALB Ingress Controller ───────────────────────────────────────────────
+    # Tells EKS to use the AWS Load Balancer Controller to provision an ALB
+    # Without this, Kubernetes won't know to create an AWS Load Balancer
+    kubernetes.io/ingress.class: alb
+
+    # internet-facing = creates a public ALB (students reach it from internet)
+    # internal        = accessible only within the VPC (for internal tools)
+    alb.ingress.kubernetes.io/scheme: internet-facing
+
+    # ip mode: routes traffic DIRECTLY to pod IPs (fastest, recommended for EKS)
+    # instance mode: routes to EC2 node port, then pod (adds one extra hop)
+    alb.ingress.kubernetes.io/target-type: ip
+
+    # ─── Subnets for the ALB ─────────────────────────────────────────────────
+    # The ALB lives in PUBLIC subnets (so internet traffic can reach it)
+    # Our nodes live in PRIVATE subnets (so they are protected from direct internet access)
+    # These are the two public subnets in our VPC (ap-south-1a and ap-south-1b)
+    alb.ingress.kubernetes.io/subnets: subnet-0e56d7e7647c8ab8a,subnet-08afb49ff9e57d7ad
+
+    # ─── HTTPS/SSL Configuration ─────────────────────────────────────────────
+    # Replace YOUR_ACM_CERTIFICATE_ARN with the actual ARN from AWS Certificate Manager
+    # How to get it:
+    #   Step 1: AWS Console → Certificate Manager → Request a public certificate
+    #   Step 2: Enter domain name (e.g., mbmcanteen.yourdomain.com)
+    #   Step 3: Choose DNS validation → Add the CNAME record to your DNS
+    #   Step 4: Wait ~5 minutes for validation → Copy the ARN
+    # OR via CLI:
+    #   aws acm request-certificate --domain-name mbmcanteen.yourdomain.com --validation-method DNS --region ap-south-1
+    alb.ingress.kubernetes.io/certificate-arn: YOUR_ACM_CERTIFICATE_ARN
+
+    # Redirect all HTTP :80 traffic to HTTPS :443 automatically
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+
+    # ─── WebSocket / Socket.io Sticky Sessions ────────────────────────────────
+    # Socket.io needs the SAME backend pod for a user's full session.
+    # Without stickiness: Student A's WebSocket might go to Pod 1, but their
+    # next HTTP request goes to Pod 2. Pod 2 has no socket state → disconnect.
+    # Duration: 86400 seconds = 24 hours (covers a full meal ordering session)
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=86400
+
+    # ─── Health Check ────────────────────────────────────────────────────────
+    # ALB uses this path to determine if a backend pod is healthy
+    # If /api/health returns non-200, ALB removes that pod from rotation
+    alb.ingress.kubernetes.io/healthcheck-path: /api/health
+
+spec:
+  rules:
+    # ─── Domain Routing ──────────────────────────────────────────────────────
+    # Replace mbmcanteen.yourdomain.com with your actual domain.
+    # After the ALB is created, get its DNS name:
+    #   kubectl get ingress -n production
+    # Then create a CNAME record in your DNS pointing to the ALB address.
+    #
+    # If you do NOT have a domain, you can remove this 'host:' line and
+    # the ALB will accept traffic from any domain (useful for testing).
+    - host: mbmcanteen.yourdomain.com
+      http:
+        paths:
+          # /api/* → Backend (Node.js Express + Socket.io)
+          # All API calls from the React app hit this route
+          # Example: /api/menu, /api/auth/login, /api/orders
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: mbm-backend-svc
+                port:
+                  number: 80
+
+          # /socket.io/* → Backend (WebSocket upgrade path)
+          # Socket.io negotiates the WebSocket connection via HTTP first,
+          # then upgrades. Both the HTTP upgrade and WebSocket frames use this path.
+          - path: /socket.io
+            pathType: Prefix
+            backend:
+              service:
+                name: mbm-backend-svc
+                port:
+                  number: 80
+
+          # /* → Frontend (nginx serving the React SPA)
+          # All other paths (/, /menu, /cart, /login) serve the React app.
+          # React Router handles client-side navigation from there.
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mbm-frontend-svc
+                port:
+                  number: 80

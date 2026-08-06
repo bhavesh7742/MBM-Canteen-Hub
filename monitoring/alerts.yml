@@ -1,0 +1,22 @@
+groups:
+  - name: mbm-canteen-alerts
+    rules:
+      - alert: HighErrorRate
+        expr: rate(mbm_http_request_duration_seconds_count{status_code=~"5.."}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "More than 5% of API requests are failing"
+
+      - alert: BackendPodCrashLoop
+        expr: kube_pod_container_status_restarts_total{namespace="production"} > 3
+        for: 5m
+        annotations:
+          summary: "Backend pod is restarting repeatedly — likely MongoDB connection issue"
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, mbm_http_request_duration_seconds_bucket) > 2
+        for: 3m
+        annotations:
+          summary: "95th percentile response time exceeds 2 seconds — students experience lag"

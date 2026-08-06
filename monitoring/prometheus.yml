@@ -1,0 +1,39 @@
+global:
+  scrape_interval: 15s       # Collect metrics from all targets every 15 seconds
+  evaluation_interval: 15s   # Evaluate alert rules every 15 seconds
+
+# ─────────────────────────────────────────────────────────
+# HOW PROMETHEUS WORKS:
+#
+# Prometheus uses a "pull" model — it reaches out to your
+# application every 15 seconds and calls GET /api/metrics.
+# The response is in Prometheus text format (key-value pairs).
+#
+# Each scrape_config defines WHERE to look for metrics.
+# ─────────────────────────────────────────────────────────
+
+scrape_configs:
+
+  # ── Scrape Prometheus itself ───────────────────────────
+  # Prometheus exposes its own metrics at /metrics
+  # Useful for monitoring how healthy Prometheus itself is
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # ── Scrape the MBM Backend ─────────────────────────────
+  # In docker-compose, services communicate by container name
+  # The backend container is named "mbm-backend" (see docker-compose.yml)
+  # It exposes Prometheus metrics at http://mbm-backend:5000/api/metrics
+  #
+  # This is for LOCAL DEVELOPMENT via docker-compose.
+  # In production (EKS), this file is replaced by prometheus-deployment.yaml
+  # which uses kubernetes_sd_configs to auto-discover backend pods.
+  - job_name: 'mbm-backend'
+    metrics_path: /api/metrics
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['mbm-backend:5000']
+        labels:
+          environment: 'development'
+          service: 'mbm-canteen-backend'

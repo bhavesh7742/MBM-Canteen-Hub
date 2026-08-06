@@ -16,6 +16,21 @@ const ManageMenu = () => {
         fetchDishes();
     }, []);
 
+    useEffect(() => {
+        if (!showModal) return;
+        document.body.classList.add('modal-open');
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                setShowModal(false);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            document.body.classList.remove('modal-open');
+        };
+    }, [showModal]);
+
     const fetchDishes = async () => {
         try {
             const { data } = await API.get('/menu');
@@ -82,17 +97,32 @@ const ManageMenu = () => {
         }
     };
 
-    if (loading) return <div className="loading-spinner"><div className="spinner"></div></div>;
     return (
         <div className="admin-page">
             <div className="admin-toolbar">
                 <div>
                     <h1 style={{ fontSize: 'var(--font-2xl)', fontWeight: 800 }}>Manage Menu</h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>{dishes.length} dishes</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>{loading ? 'Loading...' : `${dishes.length} dishes`}</p>
                 </div>
-                <button className="btn btn-primary" onClick={openAdd}>+ Add Dish</button>
+                <button className="btn btn-primary" onClick={openAdd} disabled={loading}>+ Add Dish</button>
             </div>
-            <div className="admin-table-wrapper">
+            {loading ? (
+                <div className="skeleton-table" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', marginTop: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '10px', paddingBottom: '12px', borderBottom: '1px solid var(--border-light)' }}>
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="skeleton-item" style={{ height: '20px', flex: 1 }}></div>
+                        ))}
+                    </div>
+                    {Array.from({ length: 5 }).map((_, idx) => (
+                        <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <div key={i} className="skeleton-item" style={{ height: '16px', flex: 1 }}></div>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="admin-table-wrapper">
                 <table className="admin-table">
                     <thead>
                         <tr>
@@ -127,55 +157,66 @@ const ManageMenu = () => {
                     </tbody>
                 </table>
             </div>
+            )}
             {showModal && (
-                <div className="modal-overlay" onClick={() => setShowModal(false)}>
+                <div 
+                    className="modal-overlay" 
+                    onClick={() => setShowModal(false)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="menu-modal-title"
+                >
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2>{editDish ? 'Edit Dish' : 'Add New Dish'}</h2>
-                            <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
+                            <h2 id="menu-modal-title">{editDish ? 'Edit Dish' : 'Add New Dish'}</h2>
+                            <button className="modal-close" onClick={() => setShowModal(false)} aria-label="Close modal">✕</button>
                         </div>
-                        <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label>Name</label>
-                                <input className="form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                        <form onSubmit={handleSubmit} className="modal-form">
+                            <div className="modal-body">
+                                <div className="form-group">
+                                    <label>Name</label>
+                                    <input className="form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                                </div>
+                                <div className="form-group">
+                                    <label>Category</label>
+                                    <select className="form-select" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                                        <option>Drinks</option>
+                                        <option>Snacks</option>
+                                        <option>Fast Food</option>
+                                        <option>Meals</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label>Price (₹)</label>
+                                    <input className="form-input" type="number" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
+                                </div>
+                                <div className="form-group">
+                                    <label>Description</label>
+                                    <input className="form-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                                </div>
+                                <div className="form-group">
+                                    <label>Image URL</label>
+                                    <input className="form-input" value={form.imageURL} onChange={(e) => setForm({ ...form, imageURL: e.target.value })} />
+                                </div>
+                                <div className="form-group">
+                                    <label>Stock Quantity</label>
+                                    <input className="form-input" type="number" min="0" value={form.inventoryQuantity} onChange={(e) => setForm({ ...form, inventoryQuantity: e.target.value })} required />
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Setting stock to 0 will mark dish as sold out.</p>
+                                </div>
+                                <div className="form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px', opacity: 0.7 }}>
+                                    <input 
+                                        type="checkbox" 
+                                        id="available"
+                                        checked={form.available} 
+                                        onChange={(e) => setForm({ ...form, available: e.target.checked })} 
+                                        style={{ width: '20px', height: '20px', margin: 0 }}
+                                    />
+                                    <label htmlFor="available" style={{ marginBottom: 0 }}>Force Available (Override Stock)</label>
+                                </div>
                             </div>
-                            <div className="form-group">
-                                <label>Category</label>
-                                <select className="form-select" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                                    <option>Drinks</option>
-                                    <option>Snacks</option>
-                                    <option>Fast Food</option>
-                                    <option>Meals</option>
-                                </select>
+                            <div className="modal-footer">
+                                <button type="submit" className="btn btn-primary btn-full">{editDish ? 'Update Dish' : 'Add Dish'}</button>
                             </div>
-                            <div className="form-group">
-                                <label>Price (₹)</label>
-                                <input className="form-input" type="number" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
-                            </div>
-                            <div className="form-group">
-                                <label>Description</label>
-                                <input className="form-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-                            </div>
-                            <div className="form-group">
-                                <label>Image URL</label>
-                                <input className="form-input" value={form.imageURL} onChange={(e) => setForm({ ...form, imageURL: e.target.value })} />
-                            </div>
-                            <div className="form-group">
-                                <label>Stock Quantity</label>
-                                <input className="form-input" type="number" min="0" value={form.inventoryQuantity} onChange={(e) => setForm({ ...form, inventoryQuantity: e.target.value })} required />
-                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Setting stock to 0 will mark dish as sold out.</p>
-                            </div>
-                            <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px', opacity: 0.7 }}>
-                                <input 
-                                    type="checkbox" 
-                                    id="available"
-                                    checked={form.available} 
-                                    onChange={(e) => setForm({ ...form, available: e.target.checked })} 
-                                    style={{ width: '20px', height: '20px' }}
-                                />
-                                <label htmlFor="available" style={{ marginBottom: 0 }}>Force Available (Override Stock)</label>
-                            </div>
-                            <button type="submit" className="btn btn-primary btn-full">{editDish ? 'Update Dish' : 'Add Dish'}</button>
                         </form>
                     </div>
                 </div>

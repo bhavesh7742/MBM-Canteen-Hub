@@ -3,7 +3,7 @@ node_modules/
 backend/node_modules/
 frontend/node_modules/
 
-# Environment files
+# Environment files — NEVER commit secrets
 .env
 .env.local
 .env.*.local
@@ -40,3 +40,10 @@ desktop.ini
 *.njsproj
 *.sln
 *.sw?
+
+# Local monitoring storage (Docker volumes)
+prometheus_data/
+grafana_data/
+
+# AWS CLI credentials — never commit
+.aws/

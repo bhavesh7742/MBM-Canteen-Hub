@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:10.4.0
+          ports:
+            - containerPort: 3000
+          env:
+            # Read Grafana admin password from Kubernetes Secret (not hardcoded)
+            # Create the secret: kubectl create secret generic mbm-secrets --from-literal=grafana-password='YourSecurePassword' -n monitoring
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mbm-secrets
+                  key: grafana-password
+                  optional: true   # Falls back to default if secret missing (for initial setup)
+            - name: GF_SERVER_ROOT_URL
+              value: "/"
+          volumeMounts:
+            - name: grafana-storage
+              mountPath: /var/lib/grafana
+            # Auto-provision datasources (connects to Prometheus automatically)
+            - name: grafana-provisioning
+              mountPath: /etc/grafana/provisioning
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+      volumes:
+        - name: grafana-storage
+          emptyDir: {}   # For production, use a PVC like Prometheus
+        - name: grafana-provisioning
+          configMap:
+            name: grafana-provisioning
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-service
+  namespace: monitoring
+spec:
+  selector:
+    app: grafana
+  ports:
+    - port: 80
+      targetPort: 3000
+  # LoadBalancer creates a public IP for Grafana
+  # Only you (the admin) should access this — consider restricting with security groups
+  type: LoadBalancer
+---
+# Auto-configure Prometheus as Grafana's data source
+# Without this, you'd have to manually add it through the Grafana UI every time
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-provisioning
+  namespace: monitoring
+data:
+  # This file tells Grafana to connect to Prometheus automatically on startup
+  datasources/prometheus.yml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        # prometheus-service is the Kubernetes Service name
+        # monitoring is the namespace it's in
+        url: http://prometheus-service.monitoring.svc.cluster.local:9090
+        isDefault: true
+        editable: false

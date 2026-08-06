@@ -1,0 +1,10 @@
+node_modules
+.env
+*.log
+dist
+scripts
+seed.js
+seed_error.txt
+.git
+.gitignore
+README.md

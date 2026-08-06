@@ -1,0 +1,42 @@
+# ─────────────────────────────────────────────────────────
+# PodDisruptionBudget (PDB)
+# ─────────────────────────────────────────────────────────
+#
+# WHY DO WE NEED THIS?
+# By default, during a rolling update or node maintenance,
+# Kubernetes might take ALL your pods down at once.
+# A PDB says: "Always keep at least N pods running."
+#
+# Example without PDB:
+#   You have 2 backend pods. During deploy, K8s kills both
+#   simultaneously → 5-10 seconds of downtime → students see errors.
+#
+# Example WITH PDB (minAvailable: 1):
+#   K8s kills 1 pod → waits for new pod to become Ready →
+#   then kills the second → zero downtime.
+#
+# Interview answer: "We use PodDisruptionBudget to guarantee
+# zero-downtime deployments and protect against accidental
+# mass pod deletion during cluster maintenance."
+# ─────────────────────────────────────────────────────────
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mbm-backend-pdb
+  namespace: production
+spec:
+  minAvailable: 1           # Always keep at least 1 backend pod running
+  selector:
+    matchLabels:
+      app: mbm-backend
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mbm-frontend-pdb
+  namespace: production
+spec:
+  minAvailable: 1           # Always keep at least 1 frontend pod running
+  selector:
+    matchLabels:
+      app: mbm-frontend

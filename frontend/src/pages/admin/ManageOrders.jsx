@@ -85,22 +85,21 @@ const ManageOrders = () => {
         }
     };
 
-    if (loading) return <div className="loading-spinner"><div className="spinner"></div></div>;
-
     return (
         <div className="admin-page">
             <div className="admin-toolbar">
                 <div>
                     <h1 style={{ fontSize: 'var(--font-2xl)', fontWeight: 800 }}>Manage Orders</h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>{orders.length} orders</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>{loading ? 'Loading...' : `${orders.length} orders`}</p>
                 </div>
                 <div className="category-filters">
-                    <button className={`category-pill ${filterStatus === '' ? 'active' : ''}`} onClick={() => setFilterStatus('')}>All</button>
+                    <button className={`category-pill ${filterStatus === '' ? 'active' : ''}`} onClick={() => setFilterStatus('')} disabled={loading}>All</button>
                     {STATUS_OPTIONS.map((option) => (
                         <button
                             key={option.value}
                             className={`category-pill ${filterStatus === option.value ? 'active' : ''}`}
                             onClick={() => setFilterStatus(option.value)}
+                            disabled={loading}
                         >
                             {option.label}
                         </button>
@@ -108,7 +107,23 @@ const ManageOrders = () => {
                 </div>
             </div>
 
-            <div className="admin-table-wrapper">
+            {loading ? (
+                <div className="skeleton-table" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)' }}>
+                    <div style={{ display: 'flex', gap: '10px', paddingBottom: '12px', borderBottom: '1px solid var(--border-light)' }}>
+                        {Array.from({ length: 7 }).map((_, i) => (
+                            <div key={i} className="skeleton-item" style={{ height: '20px', flex: 1 }}></div>
+                        ))}
+                    </div>
+                    {Array.from({ length: 5 }).map((_, idx) => (
+                        <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                            {Array.from({ length: 7 }).map((_, i) => (
+                                <div key={i} className="skeleton-item" style={{ height: '16px', flex: 1 }}></div>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="admin-table-wrapper">
                 <table className="admin-table">
                     <thead>
                         <tr>
@@ -159,6 +174,7 @@ const ManageOrders = () => {
                     </tbody>
                 </table>
             </div>
+            )}
 
             {orders.length === 0 && (
                 <div className="empty-state" style={{ marginTop: 'var(--space-xl)' }}>

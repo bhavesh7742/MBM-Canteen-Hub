@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -12,6 +12,32 @@ const Navbar = () => {
     const navigate = useNavigate();
     const [menuOpen, setMenuOpen] = useState(false);
 
+    useEffect(() => {
+        if (!menuOpen) return;
+
+        const handleOutsideClick = (e) => {
+            const isClickInsideLinks = e.target.closest('.navbar-links');
+            const isClickOnToggle = e.target.closest('.nav-btn-mobile');
+            if (!isClickInsideLinks && !isClickOnToggle) {
+                setMenuOpen(false);
+            }
+        };
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                setMenuOpen(false);
+            }
+        };
+
+        window.addEventListener('click', handleOutsideClick);
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            window.removeEventListener('click', handleOutsideClick);
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [menuOpen]);
+
     const handleLogout = () => {
         logout();
         setMenuOpen(false);
@@ -22,7 +48,8 @@ const Navbar = () => {
         location.pathname.startsWith(path) ? "active" : "";
 
     return (
-        <nav className="navbar">
+        <nav className={`navbar ${menuOpen ? 'menu-open' : ''}`}>
+            {menuOpen && <div className="navbar-overlay" onClick={() => setMenuOpen(false)}></div>}
             <div className="navbar-container">
                 <Link to="/menu" className="navbar-logo">
                     🍽️ <span>MBM Canteen Hub</span>
@@ -31,46 +58,50 @@ const Navbar = () => {
                     {menuOpen ? '✕' : '☰'}
                 </button>
                 <div className={`navbar-links ${menuOpen ? 'open' : ''}`}>
-                    {/* About is visible to all users */}
-                    <Link to="/about" className={isActive('/about')} onClick={() => setMenuOpen(false)}>
-                        About
-                    </Link>
+                    <div className="nav-links-main">
+                        <Link to="/about" className={isActive('/about')} onClick={() => setMenuOpen(false)}>
+                            About
+                        </Link>
 
-                    {isAuthenticated && (
-                        <>
-                            <Link to="/menu" className={isActive('/menu')} onClick={() => setMenuOpen(false)}>
-                                Menu
-                            </Link>
-                            <Link to="/favorites" className={`fav-nav-link ${isActive('/favorites')}`} onClick={() => setMenuOpen(false)}>
-                                ❤️ Saved
-                                {favCount > 0 && <span className="fav-count">{favCount}</span>}
-                            </Link>
-                            <Link to="/cart" className={`cart-badge ${isActive('/cart')}`} onClick={() => setMenuOpen(false)}>
-                                🛒 Cart
-                                {cartCount > 0 && <span className="count">{cartCount}</span>}
-                            </Link>
-                            <Link to="/orders" className={isActive('/orders')} onClick={() => setMenuOpen(false)}>
-                                My Orders
-                            </Link>
-                            {isAdmin && (
-                                <Link to="/admin/dashboard" className={isActive('/admin/dashboard')} onClick={() => setMenuOpen(false)}>
-                                    ⚙️ Admin
+                        {isAuthenticated && (
+                            <>
+                                <Link to="/menu" className={isActive('/menu')} onClick={() => setMenuOpen(false)}>
+                                    Menu
                                 </Link>
-                            )}
-                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                <Link to="/favorites" className={`fav-nav-link ${isActive('/favorites')}`} onClick={() => setMenuOpen(false)}>
+                                    ❤️ Saved
+                                    {favCount > 0 && <span className="fav-count">{favCount}</span>}
+                                </Link>
+                                <Link to="/cart" className={`cart-badge ${isActive('/cart')}`} onClick={() => setMenuOpen(false)}>
+                                    🛒 Cart
+                                    {cartCount > 0 && <span className="count">{cartCount}</span>}
+                                </Link>
+                                <Link to="/orders" className={isActive('/orders')} onClick={() => setMenuOpen(false)}>
+                                    My Orders
+                                </Link>
+                                {isAdmin && (
+                                    <Link to="/admin/dashboard" className={isActive('/admin/dashboard')} onClick={() => setMenuOpen(false)}>
+                                        ⚙️ Admin
+                                    </Link>
+                                )}
+                            </>
+                        )}
+                        {!isAuthenticated && (
+                            <Link to="/login" className={isActive('/login')} onClick={() => setMenuOpen(false)}>
+                                Login
+                            </Link>
+                        )}
+                    </div>
+                    {isAuthenticated && (
+                        <div className="nav-drawer-footer">
+                            <div className="nav-divider"></div>
+                            <span className="user-name">
                                 {user?.name || "User"}
                             </span>
                             <button className="btn btn-sm btn-outline" onClick={handleLogout}>
                                 Logout
                             </button>
-                        </>
-                    )}
-                    {!isAuthenticated && (
-                        <>
-                            <Link to="/login" className={isActive('/login')} onClick={() => setMenuOpen(false)}>
-                                Login
-                            </Link>
-                        </>
+                        </div>
                     )}
                 </div>
             </div>
