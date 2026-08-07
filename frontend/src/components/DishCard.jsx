@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useCart } from '../context/CartContext';
-import { useFavorites } from '../context/FavoritesContext';
-import { useFeedback } from '../context/FeedbackContext';
+import { useAuth } from '../context/useAuth';
+import { useCart } from '../context/useCart';
+import { useFavorites } from '../context/useFavorites';
+import useFeedback from '../context/useFeedback';
 import { useState } from 'react';
 
 const DishCard = ({ dish }) => {

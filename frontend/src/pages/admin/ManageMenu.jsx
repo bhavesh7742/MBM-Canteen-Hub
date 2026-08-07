@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import API from '../../services/api';
-import { useFeedback } from '../../context/FeedbackContext';
+import useFeedback from '../../context/useFeedback';
 
 const ManageMenu = () => {
     const [dishes, setDishes] = useState([]);

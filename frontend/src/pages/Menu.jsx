@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import API from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import DishCard from '../components/DishCard';
 import socket from '../services/socket';
 
 const Menu = () => {
-    const { user } = useAuth();
     const [dishes, setDishes] = useState([]);
     const categories = ['All', 'Drinks', 'Snacks', 'Fast Food', 'Meals'];
     const [activeCategory, setActiveCategory] = useState('All');

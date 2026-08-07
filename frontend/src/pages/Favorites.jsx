@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { useFavorites } from '../context/FavoritesContext';
-import { useState, useEffect } from 'react';
+import { useFavorites } from '../context/useFavorites';
+import { useState, useMemo } from 'react';
 import DishCard from '../components/DishCard';
 
 const Favorites = () => {
@@ -11,14 +11,14 @@ const Favorites = () => {
 
     const totalPages = Math.ceil(favoriteDishes.length / itemsPerPage);
 
-    // Auto-adjust page index if dishes get removed
-    useEffect(() => {
-        if (currentPage > 1 && currentPage > totalPages) {
-            setCurrentPage(totalPages);
-        }
-    }, [favoriteDishes.length, totalPages, currentPage]);
+    // Clamp currentPage to valid range during render — avoids calling setState
+    // inside a useEffect, which triggers cascading renders.
+    const effectivePage = useMemo(
+        () => (totalPages > 0 ? Math.min(currentPage, totalPages) : 1),
+        [currentPage, totalPages]
+    );
 
-    const paginatedDishes = favoriteDishes.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const paginatedDishes = favoriteDishes.slice((effectivePage - 1) * itemsPerPage, effectivePage * itemsPerPage);
 
     return (
         <div className="favorites-page">
@@ -72,7 +72,7 @@ const Favorites = () => {
                                         setCurrentPage((prev) => Math.max(prev - 1, 1));
                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                     }}
-                                    disabled={currentPage === 1}
+                                    disabled={effectivePage === 1}
                                     aria-label="Previous page"
                                 >
                                     Previous
@@ -82,13 +82,13 @@ const Favorites = () => {
                                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                                         <button
                                             key={page}
-                                            className={`pagination-page-btn ${currentPage === page ? 'active' : ''}`}
+                                            className={`pagination-page-btn ${effectivePage === page ? 'active' : ''}`}
                                             onClick={() => {
                                                 setCurrentPage(page);
                                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                                             }}
                                             aria-label={`Go to page ${page}`}
-                                            aria-current={currentPage === page ? 'page' : undefined}
+                                            aria-current={effectivePage === page ? 'page' : undefined}
                                         >
                                             {page}
                                         </button>
@@ -101,7 +101,7 @@ const Favorites = () => {
                                         setCurrentPage((prev) => Math.min(prev + 1, totalPages));
                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                     }}
-                                    disabled={currentPage === totalPages}
+                                    disabled={effectivePage === totalPages}
                                     aria-label="Next page"
                                 >
                                     Next

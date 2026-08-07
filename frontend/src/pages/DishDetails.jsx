@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../services/api";
-import { useAuth } from "../context/AuthContext";
-import { useCart } from "../context/CartContext";
-import { useFeedback } from "../context/FeedbackContext";
+import { useAuth } from "../context/useAuth";
+import { useCart } from "../context/useCart";
+import useFeedback from "../context/useFeedback";
 const DishDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();

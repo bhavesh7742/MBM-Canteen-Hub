@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import API from '../../services/api';
 import socket from '../../services/socket';
-import { useFeedback } from '../../context/FeedbackContext';
+import useFeedback from '../../context/useFeedback';
 
 const STATUS_OPTIONS = [
     { label: 'Pending', value: 'pending' },
