@@ -5,8 +5,8 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 
-# Build with production API URL injected at build time
-ARG VITE_API_URL=https://api.mbmcanteen.com
+# Build with production API URL injected at build time (defaults to empty string for relative path fallback)
+ARG VITE_API_URL=""
 ENV VITE_API_URL=$VITE_API_URL
 
 RUN npm run build
