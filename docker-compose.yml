@@ -1,21 +1,3 @@
-# ─────────────────────────────────────────────────────────
-# MBM Canteen Hub — Local Development Environment
-# ─────────────────────────────────────────────────────────
-#
-# Usage:
-#   Start all:     docker-compose up -d
-#   View logs:     docker-compose logs -f
-#   Stop all:      docker-compose down
-#   Rebuild:       docker-compose up -d --build
-#   Reset volumes: docker-compose down -v
-#
-# Services (after startup):
-#   mbm-frontend  → http://localhost:80
-#   mbm-backend   → http://localhost:5000
-#   prometheus    → http://localhost:9090
-#   grafana       → http://localhost:3001  (admin / admin)
-# ─────────────────────────────────────────────────────────
-
 services:
 
   # ───────────────────────────────────────────────────────
@@ -26,12 +8,9 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: mbm-backend
-    # DNS resolvers for MongoDB Atlas SRV records
-    # Without this, Docker's internal DNS fails to resolve
-    # mongodb+srv:// connection strings from MongoDB Atlas
     dns:
-      - 8.8.8.8   # Google Public DNS
-      - 1.1.1.1   # Cloudflare DNS
+      - 8.8.8.8
+      - 1.1.1.1
     ports:
       - "5000:5000"
     environment:
@@ -40,9 +19,6 @@ services:
       - MONGO_URI=${MONGO_URI}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRE=7d
-      # FRONTEND_URL controls which origins the CORS middleware allows
-      # In development: localhost is fine
-      # In production: set to your real domain in Kubernetes ConfigMap
       - FRONTEND_URL=http://localhost
     restart: unless-stopped
     healthcheck:
@@ -55,17 +31,14 @@ services:
       - mbm-network
 
   # ───────────────────────────────────────────────────────
-  # FRONTEND — React (built by Vite) served by nginx
+  # FRONTEND — React (Vite build) served by nginx
   # ───────────────────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # VITE_API_URL is baked into the static bundle at build time
-        # For local docker-compose, point to localhost:5000
-        # For production, this is injected at build time via GitHub Actions
-        VITE_API_URL: http://localhost:5000
+        VITE_API_URL: http://localhost:5000/api
     container_name: mbm-frontend
     ports:
       - "80:80"
@@ -75,63 +48,6 @@ services:
     networks:
       - mbm-network
 
-  # ───────────────────────────────────────────────────────
-  # PROMETHEUS — Metrics Collection
-  # ───────────────────────────────────────────────────────
-  # Pulls metrics from /api/metrics every 15 seconds
-  # Config: ./monitoring/prometheus.yml
-  # Dashboard data stored in named volume (persists across restarts)
-  prometheus:
-    image: prom/prometheus:v2.51.0
-    container_name: mbm-prometheus
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=7d'
-      - '--web.enable-lifecycle'  # Allows hot-reload via POST /-/reload
-    networks:
-      - mbm-network
-
-  # ───────────────────────────────────────────────────────
-  # GRAFANA — Metrics Visualization
-  # ───────────────────────────────────────────────────────
-  # Auto-provisions:
-  #   - Datasource: prometheus.yml → connects to mbm-prometheus:9090
-  #   - Dashboard:  mbm-canteen-dashboard.json → loads 8 monitoring panels
-  # No manual setup required — just open http://localhost:3001
-  grafana:
-    image: grafana/grafana:10.4.0
-    container_name: mbm-grafana
-    volumes:
-      - grafana_data:/var/lib/grafana
-      # Mount provisioning directory so Grafana auto-configures on startup
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
-      - GF_SECURITY_ADMIN_USER=admin
-      # Allow anonymous access for demo (remove in real production)
-      - GF_AUTH_ANONYMOUS_ENABLED=false
-    ports:
-      - "3001:3000"
-    depends_on:
-      - prometheus
-    networks:
-      - mbm-network
-
-# Named Docker volumes — data persists when containers restart
-# To fully reset: docker-compose down -v
-volumes:
-  prometheus_data:
-  grafana_data:
-
-# Bridge network — all services can talk to each other by container_name
-# e.g. backend connects to MongoDB Atlas over the internet
-#      prometheus connects to mbm-backend:5000/api/metrics internally
 networks:
   mbm-network:
     driver: bridge

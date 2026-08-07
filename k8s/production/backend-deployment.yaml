@@ -7,7 +7,6 @@ metadata:
     app: mbm-backend
     version: "1.0"
 spec:
-  # Start with 2 replicas — if one pod crashes, the other keeps serving traffic
   replicas: 2
   selector:
     matchLabels:
@@ -15,35 +14,23 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1        # Allow 1 extra pod during update (so 3 pods briefly)
-      maxUnavailable: 0  # Never go below 2 running pods — zero downtime
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
         app: mbm-backend
-      annotations:
-        # These annotations tell Prometheus to scrape this pod
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "5000"
-        prometheus.io/path: "/api/metrics"
     spec:
       containers:
         - name: backend
-          # Image tag is updated by GitHub Actions on every deploy
-          # Format: <account-id>.dkr.ecr.<region>.amazonaws.com/<repo>:<tag>
-          # Replace 941960167673 with your actual 12-digit account ID
-          # Or use the deploy script which does this automatically
           image: 941960167673.dkr.ecr.ap-south-1.amazonaws.com/mbm-canteen-backend:latest
           ports:
             - containerPort: 5000
           env:
-            # NODE_ENV=production enables JSON logging, hides error stack traces
             - name: NODE_ENV
               value: "production"
             - name: PORT
               value: "5000"
-            # Secrets are read from Kubernetes Secret (created manually via kubectl)
-            # See k8s/production/secret.yaml for the template
             - name: MONGO_URI
               valueFrom:
                 secretKeyRef:
@@ -54,37 +41,29 @@ spec:
                 secretKeyRef:
                   name: mbm-secrets
                   key: jwt-secret
-            # Non-sensitive config comes from ConfigMap
             - name: FRONTEND_URL
               valueFrom:
                 configMapKeyRef:
                   name: mbm-config
                   key: frontend-url
           resources:
-            # requests: what Kubernetes guarantees this container gets
-            # limits: the maximum it can use before being throttled/killed
             requests:
-              memory: "256Mi"  # 256 MB RAM guaranteed
-              cpu: "250m"      # 0.25 CPU cores guaranteed
+              memory: "256Mi"
+              cpu: "250m"
             limits:
-              memory: "512Mi"  # Will be killed (OOMKilled) if it uses more than 512MB
-              cpu: "500m"      # Will be throttled if it uses more than 0.5 CPU
-          # Liveness probe: Is the container still alive?
-          # If this fails 3 times, Kubernetes RESTARTS the container
+              memory: "512Mi"
+              cpu: "500m"
           livenessProbe:
             httpGet:
               path: /api/health
               port: 5000
-            initialDelaySeconds: 30  # Wait 30s for Node.js to start up
-            periodSeconds: 10        # Check every 10 seconds
-            failureThreshold: 3      # Restart after 3 consecutive failures
-          # Readiness probe: Is the container ready to receive traffic?
-          # If this fails, Kubernetes REMOVES it from the load balancer
-          # (traffic goes to other healthy pods)
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /api/health
               port: 5000
-            initialDelaySeconds: 10  # Start checking after 10s
-            periodSeconds: 5         # Check every 5 seconds
-            failureThreshold: 3      # Remove from LB after 3 consecutive failures
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3

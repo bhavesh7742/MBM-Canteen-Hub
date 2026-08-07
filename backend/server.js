@@ -21,16 +21,29 @@ const feedbackRoutes = require('./src/routes/feedback');
 // Dev:  allow Vite dev server (localhost:5173)
 // Prod: allow the real frontend domain from env
 // ─────────────────────────────────────────────
-const allowedOrigins =
-    process.env.NODE_ENV === 'production'
-        ? [process.env.FRONTEND_URL, process.env.FRONTEND_URL_WWW].filter(Boolean)
-        : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:80'];
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:80',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:3000',
+    process.env.FRONTEND_URL,
+    process.env.FRONTEND_URL_WWW
+].filter(Boolean);
 
 const corsOptions = {
     origin: (origin, callback) => {
         // Allow requests with no origin (curl, Postman, mobile apps, health checks)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) return callback(null, true);
+        
+        const isAllowed = allowedOrigins.includes(origin) || 
+                          origin.endsWith('.local.com') || 
+                          origin.endsWith('.yourdomain.com') ||
+                          origin.includes('ap-south-1.elb.amazonaws.com');
+                          
+        if (isAllowed) {
+            return callback(null, true);
+        }
         callback(new Error(`CORS: origin ${origin} not allowed`));
     },
     credentials: true,
@@ -92,16 +105,12 @@ const io = new Server(server, {
     }
 });
 
-const { metricsRouter, httpDuration, socketConnections } = require('./src/middleware/metrics');
-
 app.set('io', io);
 
 io.on('connection', (socket) => {
     console.log(`🔌 Client connected: ${socket.id}`);
-    socketConnections.inc();
     socket.on('disconnect', () => {
         console.log(`❌ Client disconnected: ${socket.id}`);
-        socketConnections.dec();
     });
 });
 
@@ -126,11 +135,24 @@ app.use(helmet({
     contentSecurityPolicy: false
 }));
 
+// ─────────────────────────────────────────────
+// Health Check — FAST PATH
+// Must be defined BEFORE rate limiters to prevent Kubernetes probe failures (status code 429)
+// ─────────────────────────────────────────────
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        message: 'MBM Canteen Hub API is running 🚀',
+        environment: process.env.NODE_ENV || 'development',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Trust proxy — needed when behind ALB/nginx so rate limiter
 // uses the real client IP (X-Forwarded-For), not the load balancer IP
 app.set('trust proxy', 1);
 
-// Apply global rate limiter to all routes
+// Apply global rate limiter to all api routes (except health which is already served)
 app.use('/api/', globalLimiter);
 
 // Core middleware
@@ -138,29 +160,7 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10kb' })); // Reject payloads > 10KB (prevents large payload attacks)
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
-// ─────────────────────────────────────────────
-// Prometheus HTTP metrics middleware
-// Records every request's method, route, status, and duration
-// Skips /api/metrics and /api/health to avoid noise in graphs
-// ─────────────────────────────────────────────
-app.use((req, res, next) => {
-    const start = process.hrtime();
-    res.on('finish', () => {
-        const duration = process.hrtime(start);
-        const durationInSeconds = duration[0] + duration[1] / 1e9;
-        const route = req.route ? req.route.path : req.path;
-        if (!['/api/metrics', '/api/health'].includes(route)) {
-            httpDuration.observe(
-                { method: req.method, route, status_code: res.statusCode },
-                durationInSeconds
-            );
-        }
-    });
-    next();
-});
 
-// Prometheus metrics endpoint (scraped by Prometheus every 15s)
-app.use('/api/metrics', metricsRouter);
 
 // HTTP Request Logging
 // Production: structured JSON (parseable by CloudWatch / ELK Stack)
@@ -197,15 +197,7 @@ app.get('/', (req, res) => {
     res.json({ status: 'ok', message: 'Welcome to MBM Canteen Hub API 🚀' });
 });
 
-// Health Check — used by Docker HEALTHCHECK, ALB, and Kubernetes liveness/readiness probes
-app.get('/api/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        message: 'MBM Canteen Hub API is running 🚀',
-        environment: process.env.NODE_ENV || 'development',
-        timestamp: new Date().toISOString()
-    });
-});
+
 
 // Global Error Handler
 app.use((err, req, res, next) => {

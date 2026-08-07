@@ -204,7 +204,6 @@ jobs:
       # This creates/updates: namespace, configmap, secrets, deployments, services, ingress
       - name: Apply Kubernetes manifests
         run: |
-          kubectl apply -f k8s/metrics-server.yaml
           kubectl apply -f k8s/production/namespace.yaml
           kubectl apply -f k8s/production/configmap.yaml
           kubectl apply -f k8s/production/backend-deployment.yaml
@@ -270,3 +269,11 @@ jobs:
           kubectl get pods -n ${{ env.K8S_NAMESPACE }}
 
           echo "✅ Rollback complete — previous version is live"
+
+      - name: Verify deployment health
+        run: |
+          sleep 15
+          kubectl get pods -n production
+          kubectl rollout status deployment/mbm-backend -n production
+          kubectl rollout status deployment/mbm-frontend -n production
+

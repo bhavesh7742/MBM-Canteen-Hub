@@ -6,13 +6,11 @@ metadata:
   # ConfigMap stores non-sensitive configuration
   # For sensitive data (passwords, API keys), use Kubernetes Secret instead
 data:
-  # Replace this with your actual production domain
-  # e.g. https://mbmcanteen.local.com
-  frontend-url: "https://mbmcanteen.local.com"
+  # Real production URL of the frontend (AWS ALB DNS address)
+  frontend-url: "http://k8s-producti-mbmingre-553e480964-1759019714.ap-south-1.elb.amazonaws.com"
 
   # The environment mode — controls logging format and error details
   node-env: "production"
 
-  # CORS: which domains the backend accepts requests from
-  # Must match the domain students will use to open the site
-  socket-cors-origin: "https://mbmcanteen.local.com"
+  # CORS: which domains the backend accepts requests from (must match the frontend ALB URL)
+  socket-cors-origin: "http://k8s-producti-mbmingre-553e480964-1759019714.ap-south-1.elb.amazonaws.com"
