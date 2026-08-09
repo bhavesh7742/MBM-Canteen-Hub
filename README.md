@@ -10,7 +10,7 @@
   [![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
   [![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
   [![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-  [![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+ 
 
   <p align="center">
     A production-grade, highly-available college canteen ordering system built with a cloud-native architecture. 
@@ -336,18 +336,13 @@ The project was deployed using multiple environments to demonstrate the complete
 
 #### Deployment Screenshots
 
-**Vercel + Render Deployment**
+### Deployment & DevOps Screenshots
 
-`[ https://drive.google.com/file/d/1yros5peAkM6TPTSlQ97yRswVCSwgiLnb/view?usp=drive_link ]`
-
-**AWS EKS + Application Load Balancer**
-
-`[ https://drive.google.com/file/d/1zaUI-iAFnwjKr-b9MhcC0kPeFOdUwL5T/view?usp=drive_link ]`
-
-**GitHub Actions CI/CD Pipeline**
-
-`[ https://drive.google.com/file/d/1F0KmwJLKSPfak0FlucKX4S_8nluFvQod/view?usp=drive_link ]`
-
+| Deployment | Evidence |
+|---|---|
+| **Vercel + Render** | [View Screenshot](https://drive.google.com/file/d/1yros5peAkM6TPTSlQ97yRswVCSwgiLnb/view?usp=drive_link) |
+| **AWS EKS + ALB** | [View Screenshot](https://drive.google.com/file/d/1zaUI-iAFnwjKr-b9MhcC0kPeFOdUwL5T/view?usp=drive_link) |
+| **GitHub Actions CI/CD** | [View Screenshot](https://drive.google.com/file/d/1F0KmwJLKSPfak0FlucKX4S_8nluFvQod/view?usp=drive_link) |
 ---
 
 ## 🚀 Live Demo & Repository Link
