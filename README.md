@@ -1,4 +1,4 @@
-# 🍽️ MBM Canteen Hub — Production Cloud & Kubernetes Architecture
+<img width="949" height="533" alt="screenshotsaws-alb png" src="https://github.com/user-attachments/assets/c655cbf4-7ebf-4552-ba0a-fbae696985d4" /># 🍽️ MBM Canteen Hub — Production Cloud & Kubernetes Architecture
 
 <div align="center">
   
@@ -324,19 +324,32 @@ Copy the `ADDRESS` host value from the output (e.g. `k8s-producti-...elb.amazona
 
 ## 📸 Screenshots
 
-### Local Development Orchestration
-*📂 Section Placeholder*
-`[ screenshots/home.png ]` - Front page client dashboard
-`[ screenshots/menu.png ]` - Category filters and sorting system
+### Deployment & DevOps
 
-### Kubernetes Control Panel & Resource Metrics
-*📂 Section Placeholder*
-`[ screenshots/admin.png ]` - Active orders dashboard
+The project was deployed using multiple environments to demonstrate the complete development and deployment workflow.
 
-### GitHub Actions Successful Deploy Pipeline
-*📂 Section Placeholder*
-`[ screenshots/github-actions.png ]` - Green automated deployment pipeline workflow
-`[ screenshots/architecture.png ]` - Mermaid diagram preview
+| Environment | Description |
+|---|---|
+| **Vercel + Render** | Initial deployment of the MERN application |
+| **AWS EKS + ALB** | Containerized production deployment using Docker and Kubernetes |
+| **GitHub Actions** | Automated CI/CD pipeline for building and deploying Docker images |
+
+#### Deployment Screenshots
+
+**Vercel + Render Deployment**
+
+`[ <img width="960" height="527" alt="screenshotsvercel-render png" src="https://github.com/user-attachments/assets/691716e9-5ae0-478b-859c-181fda7b921c" />
+ ]`
+
+**AWS EKS + Application Load Balancer**
+
+`[ <img width="949" height="533" alt="screenshotsaws-alb png" src="https://github.com/user-attachments/assets/760e3b43-bb5b-4404-a4f9-4053f10ac4fe" />
+ ]`
+
+**GitHub Actions CI/CD Pipeline**
+
+`[ <img width="1833" height="858" alt="screenshotsgithub-actions png" src="https://github.com/user-attachments/assets/50e0bd4e-6709-4305-9658-22699868b277" />
+ ]`
 
 ---
 
