@@ -342,7 +342,7 @@ Copy the `ADDRESS` host value from the output (e.g. `k8s-producti-...elb.amazona
 
 ## 🚀 Live Demo & Repository Link
 
-- **GitHub Code Repository:** [https://github.com/YOUR_USERNAME/mbm-canteen-hub](https://github.com/YOUR_USERNAME/mbm-canteen-hub)
+- **GitHub Code Repository:** [https://github.com/bhavesh7742/mbm-canteen-hub](https://github.com/bhavesh7742/mbm-canteen-hub)
 - **Live Deployment URL:** [http://k8s-producti-mbmingre-553e480964-1759019714.ap-south-1.elb.amazonaws.com](http://k8s-producti-mbmingre-553e480964-1759019714.ap-south-1.elb.amazonaws.com)
 - **API Health Check:** [http://k8s-producti-mbmingre-553e480964-1759019714.ap-south-1.elb.amazonaws.com/api/health](http://k8s-producti-mbmingre-553e480964-1759019714.ap-south-1.elb.amazonaws.com/api/health)
 
