@@ -352,5 +352,3 @@ The project was deployed using multiple environments to demonstrate the complete
 - **API Health Check:** [http://k8s-producti-mbmingre-553e480964-1759019714.ap-south-1.elb.amazonaws.com/api/health](http://k8s-producti-mbmingre-553e480964-1759019714.ap-south-1.elb.amazonaws.com/api/health)
 
 ---
-
-
