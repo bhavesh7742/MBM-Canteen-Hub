@@ -149,7 +149,7 @@ docker push $ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/mbm-canteen-backend:lat
 
 # Build and push frontend
 docker build \
-    --build-arg VITE_API_URL=https://api.mbmcanteen.local.com \
+    --build-arg VITE_API_URL=http://<YOUR_ALB_DNS_ADDRESS>/api \
     -t mbm-canteen-frontend ./frontend
 docker tag mbm-canteen-frontend:latest \
     $ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/mbm-canteen-frontend:latest
@@ -251,22 +251,18 @@ kubectl get deployment -n kube-system aws-load-balancer-controller
 
 ### Step 14: Update configuration files
 
-**In `k8s/production/backend-deployment.yaml`:**
+**In `k8s/production/backend-deployment.yaml` and `k8s/production/frontend-deployment.yaml`:**
 Replace `YOUR_AWS_ACCOUNT_ID` with your actual 12-digit AWS account ID:
 ```bash
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 echo "Replace YOUR_AWS_ACCOUNT_ID with: $ACCOUNT_ID"
 ```
 
-**In `k8s/production/frontend-deployment.yaml`:**
-Replace `YOUR_AWS_ACCOUNT_ID` with your account ID.
-
 **In `k8s/production/configmap.yaml`:**
-Replace `mbmcanteen.local.com` with your actual domain name.
+Update `frontend-url` and `socket-cors-origin` with your actual ALB DNS URL once provisioned.
 
 **In `k8s/production/ingress.yaml`:**
-Replace `mbmcanteen.local.com` with your actual domain name.
-Replace `YOUR_ACM_CERTIFICATE_ARN` with your SSL certificate ARN (Step 16).
+Ensure the subnet IDs in `alb.ingress.kubernetes.io/subnets` match your VPC's public subnets if specified.
 
 ### Step 15: Create Kubernetes namespace
 
@@ -277,18 +273,7 @@ kubectl apply -f k8s/production/namespace.yaml
 kubectl get namespaces
 ```
 
-### Step 16: Create SSL Certificate (HTTPS)
-
-1. Go to AWS Console → **Certificate Manager (ACM)**
-2. Click **Request certificate** → **Request a public certificate**
-3. Enter your domain: `mbmcanteen.local.com`
-4. Choose **DNS validation** → **Request**
-5. Click the certificate → **Create records in Route 53** (if using Route 53) OR add the CNAME records manually to your DNS provider
-6. Wait for status to become **Issued** (~5 minutes)
-7. Copy the **Certificate ARN** (looks like: `arn:aws:acm:ap-south-1:123456789012:certificate/abc-def-123`)
-8. Paste it into `k8s/production/ingress.yaml` where it says `YOUR_ACM_CERTIFICATE_ARN`
-
-### Step 17: Create Kubernetes Secrets
+### Step 16: Create Kubernetes Secrets
 
 > ⚠️ Never put actual secrets in YAML files that get committed to Git!
 
@@ -303,10 +288,10 @@ kubectl create secret generic mbm-secrets \
 kubectl get secret mbm-secrets -n production
 ```
 
-### Step 18: Apply all Kubernetes manifests
+### Step 17: Apply all Kubernetes manifests
 
 ```bash
-# Deploy everything
+# Deploy all production resources
 kubectl apply -f k8s/production/configmap.yaml
 kubectl apply -f k8s/production/backend-deployment.yaml
 kubectl apply -f k8s/production/backend-service.yaml
@@ -316,7 +301,7 @@ kubectl apply -f k8s/production/frontend-service.yaml
 kubectl apply -f k8s/production/ingress.yaml
 ```
 
-### Step 19: Watch pods come up
+### Step 18: Watch pods come up
 
 ```bash
 # Watch pods start in real time (Ctrl+C to stop)
@@ -330,47 +315,33 @@ kubectl get pods -n production -w
 # mbm-frontend-xxx-zzz            1/1     Running   0          2m
 ```
 
-### Step 20: Get the load balancer address
+---
+
+## Part 7 — Access and Verify Application
+
+### Step 19: Get the Load Balancer address
 
 ```bash
 kubectl get ingress -n production
 
 # Expected output:
-# NAME          CLASS    HOSTS                    ADDRESS                           PORTS
-# mbm-ingress   <none>   mbmcanteen.local.com   k8s-prod-mbm-xxx.ap-south-1.elb.amazonaws.com   80, 443
+# NAME          CLASS   HOSTS   ADDRESS                                          PORTS
+# mbm-ingress   alb     *       k8s-prod-mbm-xxx.ap-south-1.elb.amazonaws.com   80
 ```
 
-Copy the ADDRESS value — this is your ALB's DNS name.
+Copy the **ADDRESS** value — this is your AWS Application Load Balancer DNS name.
 
----
-
-## Part 7 — Configure DNS
-
-### Step 21: Point your domain to the ALB
-
-**If using AWS Route 53:**
-1. Go to Route 53 → Hosted Zones → your domain
-2. Create Record → Type: **A** → Enable **Alias**
-3. Route traffic to: **Application and Classic Load Balancer**
-4. Select region: **ap-south-1**
-5. Select the load balancer that was just created
-6. Save
-
-**If using another DNS provider (GoDaddy, Namecheap, etc.):**
-1. Go to your DNS settings
-2. Add a **CNAME** record:
-   - Name: `@` (or `mbmcanteen`)
-   - Value: paste the ALB DNS address from Step 20
-3. Wait up to 30 minutes for DNS to propagate
-
-### Step 22: Verify the deployment
+### Step 20: Verify the deployment
 
 ```bash
-# Wait for DNS to propagate, then:
-curl https://mbmcanteen.local.com/api/health
+# Test the backend health endpoint via ALB:
+curl http://<YOUR_ALB_DNS_ADDRESS>/api/health
 # Expected: {"status":"ok","message":"MBM Canteen Hub API is running 🚀"}
 
-# Check all pods are healthy
+# Open the app in your browser:
+# http://<YOUR_ALB_DNS_ADDRESS>
+
+# Check all pods are healthy:
 kubectl get pods -n production
 ```
 
@@ -378,7 +349,7 @@ kubectl get pods -n production
 
 ## Part 8 — Set Up CI/CD (GitHub Actions)
 
-### Step 23: Create GitHub Actions IAM User
+### Step 21: Create GitHub Actions IAM User
 
 ```bash
 # Create a dedicated IAM user for GitHub Actions
@@ -429,7 +400,7 @@ aws iam attach-user-policy \
 aws iam create-access-key --user-name mbm-github-actions
 ```
 
-### Step 24: Add GitHub Actions kubectl access
+### Step 22: Add GitHub Actions kubectl access
 
 ```bash
 # Allow the github-actions IAM user to manage your EKS cluster
@@ -446,7 +417,7 @@ kubectl get configmap aws-auth -n kube-system -o yaml > /tmp/aws-auth.yaml
 kubectl apply -f /tmp/aws-auth.yaml
 ```
 
-### Step 25: Add GitHub Secrets
+### Step 23: Add GitHub Secrets
 
 Go to your GitHub repository → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 
@@ -457,7 +428,7 @@ Add these secrets:
 | `AWS_ACCESS_KEY_ID` | Access key for `mbm-github-actions` user |
 | `AWS_SECRET_ACCESS_KEY` | Secret key for `mbm-github-actions` user |
 | `AWS_ACCOUNT_ID` | Your 12-digit AWS account ID |
-| `VITE_API_URL` | `https://mbmcanteen.local.com` |
+| `VITE_API_URL` | `http://<YOUR_ALB_DNS_ADDRESS>/api` |
 
 Now push to the `main` branch — the GitHub Actions pipeline will:
 1. ✅ Lint and build your code
@@ -486,7 +457,7 @@ kubectl logs <pod-name> -n production
 ### CORS errors in browser?
 
 ```bash
-# Check FRONTEND_URL in the configmap matches your actual domain
+# Check frontend-url in the configmap matches your ALB URL
 kubectl get configmap mbm-config -n production -o yaml
 
 # Check backend is reading it correctly
