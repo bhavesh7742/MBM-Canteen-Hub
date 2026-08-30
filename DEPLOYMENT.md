@@ -44,11 +44,9 @@ JWT_EXPIRE=7d
 ### Step 2: Run locally with Docker Compose
 
 ```bash
-# This builds both Docker images and starts all 4 services:
+# This builds both Docker images and starts both services:
 # - mbm-backend  (port 5000)
 # - mbm-frontend (port 80)
-# - prometheus   (port 9090)
-# - grafana      (port 3001)
 docker-compose up -d
 ```
 
@@ -64,8 +62,6 @@ curl http://localhost:5000/api/health
 
 # Open the app in your browser
 # http://localhost:80  → React frontend
-# http://localhost:9090 → Prometheus
-# http://localhost:3001 → Grafana (login: admin / admin)
 ```
 
 ### Step 4: Stop local environment
@@ -276,7 +272,6 @@ Replace `YOUR_ACM_CERTIFICATE_ARN` with your SSL certificate ARN (Step 16).
 
 ```bash
 kubectl apply -f k8s/production/namespace.yaml
-kubectl apply -f k8s/monitoring/prometheus-deployment.yaml
 
 # Verify
 kubectl get namespaces
@@ -319,9 +314,6 @@ kubectl apply -f k8s/production/backend-hpa.yaml
 kubectl apply -f k8s/production/frontend-deployment.yaml
 kubectl apply -f k8s/production/frontend-service.yaml
 kubectl apply -f k8s/production/ingress.yaml
-
-# Deploy monitoring
-kubectl apply -f k8s/monitoring/
 ```
 
 ### Step 19: Watch pods come up
@@ -380,7 +372,6 @@ curl https://mbmcanteen.local.com/api/health
 
 # Check all pods are healthy
 kubectl get pods -n production
-kubectl get pods -n monitoring
 ```
 
 ---
@@ -472,27 +463,6 @@ Now push to the `main` branch — the GitHub Actions pipeline will:
 1. ✅ Lint and build your code
 2. 🐳 Build Docker images and push to ECR
 3. 🚀 Deploy to EKS with rolling update
-
----
-
-## Part 9 — Monitoring
-
-### View Grafana Dashboard
-
-```bash
-# Get the Grafana load balancer address
-kubectl get svc grafana-service -n monitoring
-```
-
-Open the ADDRESS in your browser:
-- **Username**: `admin`
-- **Password**: `ChangeMeInProduction` (change this in grafana-deployment.yaml)
-
-Prometheus is already pre-configured as a data source. You can create dashboards to visualize:
-- HTTP requests per second
-- Response time percentiles (p50, p95, p99)
-- Active WebSocket connections
-- Pod CPU and memory usage
 
 ---
 
