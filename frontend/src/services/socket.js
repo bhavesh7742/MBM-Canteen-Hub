@@ -1,23 +1,24 @@
-import { io } from 'socket.io-client';
-
-// In production, backend and frontend are behind the same ALB.
-// If VITE_API_URL is configured (e.g. http://domain/api), we strip "/api" to get the socket base.
-// If not configured, we dynamically resolve the current window origin in the browser.
-const getSocketUrl = () => {
-    if (import.meta.env.VITE_API_URL) {
-        const url = import.meta.env.VITE_API_URL;
-        return url.endsWith('/api') ? url.slice(0, -4) : url;
-    }
-    // Fallback to current browser location in production, or localhost:5000 in local dev
-    if (window.location.hostname === 'localhost' && window.location.port === '5173') {
-        return 'http://localhost:5000';
-    }
-    return window.location.origin;
+// ─────────────────────────────────────────────
+// Socket.IO is DISABLED
+//
+// The backend runs on AWS Lambda which is stateless and ephemeral.
+// Lambda spins up per HTTP request and shuts down immediately after —
+// there is no persistent process to maintain a WebSocket connection.
+//
+// Replacement strategy: polling.
+// Each page that previously used socket events now polls its API
+// endpoint on a setInterval. This is simpler, universally compatible
+// with Lambda, and sufficient for a canteen application.
+//
+// This stub exports a no-op socket object so existing import statements
+// in Menu.jsx, ManageOrders.jsx, AdminDashboard.jsx, OrderHistory.jsx
+// continue to work without modification.
+// ─────────────────────────────────────────────
+const socket = {
+    connect: () => {},
+    disconnect: () => {},
+    on: () => {},
+    off: () => {},
 };
-
-const socket = io(getSocketUrl(), {
-    autoConnect: false,
-    transports: ['websocket', 'polling']
-});
 
 export default socket;

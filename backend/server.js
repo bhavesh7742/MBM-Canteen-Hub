@@ -1,12 +1,10 @@
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
 const cors = require('cors');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
-const connectDB = require('./src/config/db');
+// connectDB is called from lambda.js (with connection caching) — not here
 
 // Import Routes
 const authRoutes = require('./src/routes/auth');
@@ -36,10 +34,9 @@ const corsOptions = {
         // Allow requests with no origin (curl, Postman, mobile apps, health checks)
         if (!origin) return callback(null, true);
         
-        const isAllowed = allowedOrigins.includes(origin) || 
-                          origin.endsWith('.local.com') || 
-                          origin.endsWith('.yourdomain.com') ||
-                          origin.includes('ap-south-1.elb.amazonaws.com');
+        const isAllowed = allowedOrigins.includes(origin) ||
+                          origin.endsWith('.local.com') ||
+                          origin.endsWith('.cloudfront.net');
                           
         if (isAllowed) {
             return callback(null, true);
@@ -91,28 +88,9 @@ const authLimiter = rateLimit({
 });
 
 // Initialize Express
+// NOTE: Socket.IO removed — Lambda is stateless (no persistent connections).
+// Real-time updates are replaced with polling in the frontend.
 const app = express();
-const server = http.createServer(app);
-
-// ─────────────────────────────────────────────
-// Socket.io
-// Real-time: newOrder, orderStatusUpdated, menuUpdated
-// ─────────────────────────────────────────────
-const io = new Server(server, {
-    cors: {
-        origin: allowedOrigins,
-        methods: ['GET', 'POST', 'PUT', 'DELETE']
-    }
-});
-
-app.set('io', io);
-
-io.on('connection', (socket) => {
-    console.log(`🔌 Client connected: ${socket.id}`);
-    socket.on('disconnect', () => {
-        console.log(`❌ Client disconnected: ${socket.id}`);
-    });
-});
 
 // ─────────────────────────────────────────────
 // Security Middleware
@@ -137,7 +115,7 @@ app.use(helmet({
 
 // ─────────────────────────────────────────────
 // Health Check — FAST PATH
-// Must be defined BEFORE rate limiters to prevent Kubernetes probe failures (status code 429)
+// Defined BEFORE rate limiters so it never returns 429
 // ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
     res.json({
@@ -148,8 +126,8 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Trust proxy — needed when behind ALB/nginx so rate limiter
-// uses the real client IP (X-Forwarded-For), not the load balancer IP
+// Trust proxy — needed when behind API Gateway so rate limiter
+// uses the real client IP (X-Forwarded-For), not the gateway IP
 app.set('trust proxy', 1);
 
 // Apply global rate limiter to all api routes (except health which is already served)
@@ -215,15 +193,26 @@ app.use((req, res) => {
 });
 
 // ─────────────────────────────────────────────
-// Start Server
+// Export app for Lambda (serverless-http wraps it)
+// For local dev: run `node localServer.js` which calls
+// connectDB() + app.listen() directly.
 // ─────────────────────────────────────────────
-const PORT = process.env.PORT || 5000;
-connectDB().then(() => {
-    server.listen(PORT, () => {
-        console.log(`\n🚀 MBM Canteen Hub API running on port ${PORT}`);
-        console.log(`🔒 Security: Helmet + Rate Limiting enabled`);
-        console.log(`📡 Socket.io ready for real-time connections`);
-        console.log(`🌐 CORS origins: ${allowedOrigins.join(', ')}`);
-        console.log(`🔗 Health: http://localhost:${PORT}/api/health\n`);
+module.exports = app;
+
+// ─────────────────────────────────────────────
+// LOCAL DEV ONLY: start server if run directly
+// `node server.js` or `nodemon server.js`
+// In Lambda, lambda.js is the entry point instead.
+// ─────────────────────────────────────────────
+if (require.main === module) {
+    const connectDB = require('./src/config/db');
+    const PORT = process.env.PORT || 5000;
+    connectDB().then(() => {
+        app.listen(PORT, () => {
+            console.log(`\n🚀 MBM Canteen Hub API running on port ${PORT}`);
+            console.log(`🔒 Security: Helmet + Rate Limiting enabled`);
+            console.log(`🌐 CORS origins: ${allowedOrigins.join(', ')}`);
+            console.log(`🔗 Health: http://localhost:${PORT}/api/health\n`);
+        });
     });
-});
+}

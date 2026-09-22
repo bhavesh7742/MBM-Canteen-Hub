@@ -6,18 +6,6 @@ const AdminDashboard = () => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchStats();
-        socket.connect();
-        socket.on('newOrder', fetchStats);
-        socket.on('orderStatusUpdated', fetchStats);
-
-        return () => {
-            socket.off('newOrder', fetchStats);
-            socket.off('orderStatusUpdated', fetchStats);
-        };
-    }, []);
-
     const fetchStats = async () => {
         try {
             const { data } = await API.get('/admin/stats');
@@ -28,6 +16,21 @@ const AdminDashboard = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchStats();
+
+        // Poll dashboard stats every 5 seconds.
+        // Replaces Socket.IO 'newOrder' and 'orderStatusUpdated' listeners.
+        // Lambda is stateless — no persistent WebSocket connections possible.
+        const pollInterval = setInterval(fetchStats, 5000);
+
+        return () => {
+            clearInterval(pollInterval);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
 
     return (
         <div className="admin-page">

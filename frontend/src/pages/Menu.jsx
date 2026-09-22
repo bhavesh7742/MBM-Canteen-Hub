@@ -39,17 +39,18 @@ const Menu = () => {
     useEffect(() => {
         fetchDishes();
 
-        socket.connect();
-        const handleUpdate = () => {
-            fetchDishes();
-        };
-        socket.on('menuUpdated', handleUpdate);
+        // Poll for menu updates every 10 seconds.
+        // Replaces the Socket.IO 'menuUpdated' listener — Lambda cannot
+        // maintain persistent WebSocket connections (stateless invocations).
+        const pollInterval = setInterval(() => {
+            fetchDishes(activeCategory, searchQuery);
+        }, 10000);
 
         return () => {
-            socket.off('menuUpdated', handleUpdate);
-            socket.disconnect();
+            clearInterval(pollInterval);
         };
-    }, [fetchDishes]);
+    }, [fetchDishes, activeCategory, searchQuery]);
+
 
     const handleCategoryChange = (category) => {
         setActiveCategory(category);

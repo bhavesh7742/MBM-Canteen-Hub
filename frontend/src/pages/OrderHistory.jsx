@@ -13,21 +13,20 @@ const OrderHistory = () => {
 
     useEffect(() => {
         fetchOrders();
-        socket.connect();
-        socket.on('orderStatusUpdated', (data) => {
-            setOrders((prev) =>
-                prev.map((order) =>
-                    order._id === data.orderId || order.orderCode === data.orderCode
-                        ? { ...order, status: data.status }
-                        : order
-                )
-            );
-        });
+
+        // Poll order status every 8 seconds.
+        // Replaces the Socket.IO 'orderStatusUpdated' listener.
+        // Students see their order status (pending -> preparing -> ready)
+        // update within 8 seconds of admin changing it — imperceptible delay
+        // for a canteen scenario where they're waiting in person.
+        const pollInterval = setInterval(fetchOrders, 8000);
+
         return () => {
-            socket.off('orderStatusUpdated');
-            socket.disconnect();
+            clearInterval(pollInterval);
         };
     }, []);
+
+
 
     const fetchOrders = async () => {
         try {

@@ -35,15 +35,18 @@ const ManageOrders = () => {
 
     useEffect(() => {
         fetchOrders();
-        socket.connect();
-        socket.on('newOrder', fetchOrders);
-        socket.on('orderStatusUpdated', fetchOrders);
+
+        // Poll for new orders and status changes every 5 seconds.
+        // Replaces Socket.IO 'newOrder' and 'orderStatusUpdated' listeners.
+        // 5-second interval chosen for admin panel — faster updates improve
+        // the admin's ability to respond to incoming orders promptly.
+        const pollInterval = setInterval(fetchOrders, 5000);
 
         return () => {
-            socket.off('newOrder', fetchOrders);
-            socket.off('orderStatusUpdated', fetchOrders);
+            clearInterval(pollInterval);
         };
     }, [fetchOrders]);
+
 
     const handleStatusUpdate = async (orderId, status) => {
         if (status === 'delivered') {
