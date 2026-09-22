@@ -17,6 +17,7 @@ frontend/dist/
 frontend/dist-ssr/
 build/
 out/
+*.zip
 
 # Logs
 logs/
@@ -40,10 +41,6 @@ desktop.ini
 *.njsproj
 *.sln
 *.sw?
-
-# Local monitoring storage (Docker volumes)
-prometheus_data/
-grafana_data/
 
 # AWS CLI credentials — never commit
 .aws/

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 import OrderCard from '../components/OrderCard';
-import socket from '../services/socket';
 import useFeedback from '../context/useFeedback';
 
 const OrderHistory = () => {

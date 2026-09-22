@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import API from '../services/api';
 import DishCard from '../components/DishCard';
-import socket from '../services/socket';
 
 const Menu = () => {
     const [dishes, setDishes] = useState([]);

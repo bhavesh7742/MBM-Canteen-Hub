@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import API from '../../services/api';
-import socket from '../../services/socket';
 
 const AdminDashboard = () => {
     const [stats, setStats] = useState(null);
