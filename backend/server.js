@@ -36,12 +36,13 @@ const corsOptions = {
         
         const isAllowed = allowedOrigins.includes(origin) ||
                           origin.endsWith('.local.com') ||
-                          origin.endsWith('.cloudfront.net');
+                          origin.endsWith('.amazonaws.com');
                           
         if (isAllowed) {
             return callback(null, true);
         }
-        callback(new Error(`CORS: origin ${origin} not allowed`));
+        // Return false instead of throwing Error to prevent 500 crashes
+        callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -137,6 +138,39 @@ app.use('/api/', globalLimiter);
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10kb' })); // Reject payloads > 10KB (prevents large payload attacks)
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+// ─────────────────────────────────────────────
+// Body Parser Fix for serverless-http + Express 5:
+// serverless-http sets req.body as a Buffer and marks the request as finished (complete: true, readable: false),
+// causing Express 5's body-parser to skip reading the stream.
+// This middleware ensures Buffer/String request bodies are parsed to JSON objects.
+// ─────────────────────────────────────────────
+app.use((req, res, next) => {
+    if (Buffer.isBuffer(req.body)) {
+        const contentType = (req.headers['content-type'] || '').toLowerCase();
+        if (contentType.includes('application/json') || (!contentType && req.body.length > 0)) {
+            try {
+                req.body = JSON.parse(req.body.toString('utf8'));
+            } catch (e) {
+                req.body = {};
+            }
+        } else if (contentType.includes('application/x-www-form-urlencoded')) {
+            try {
+                const querystring = require('querystring');
+                req.body = querystring.parse(req.body.toString('utf8'));
+            } catch (e) {
+                req.body = {};
+            }
+        }
+    } else if (typeof req.body === 'string' && req.body.trim()) {
+        try {
+            req.body = JSON.parse(req.body);
+        } catch (e) {
+            // Keep original string if not valid JSON
+        }
+    }
+    next();
+});
 
 
 

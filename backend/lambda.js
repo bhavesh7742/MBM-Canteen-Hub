@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 // ─────────────────────────────────────────────
 // Lambda Entry Point — MBM Canteen Hub API
@@ -21,6 +21,8 @@ const connectDB = require('./src/config/db');
 const app = require('./server');
 
 let isConnected = false;
+// Cache the serverless handler so it's not recreated on every invocation
+let serverlessHandler = null;
 
 const handler = async (event, context) => {
     // Tell Lambda not to wait for the Node.js event loop to drain before
@@ -34,7 +36,14 @@ const handler = async (event, context) => {
         isConnected = true;
     }
 
-    return serverless(app)(event, context);
+
+
+    // Reuse the handler across warm invocations
+    if (!serverlessHandler) {
+        serverlessHandler = serverless(app);
+    }
+
+    return serverlessHandler(event, context);
 };
 
 module.exports = { handler };

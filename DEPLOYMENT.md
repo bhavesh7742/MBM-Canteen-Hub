@@ -1,4 +1,24 @@
-﻿# MBM Canteen Hub — AWS Serverless Deployment Guide
+# MBM Canteen Hub — AWS Serverless Deployment Guide
+
+## 🌐 Live Deployment Endpoints
+
+| Resource | Service | Endpoint / Identifier |
+|---|---|---|
+| **Frontend Website** | Amazon S3 Static Website Hosting | [http://mbm-canteen-hub-frontend.s3-website.ap-south-1.amazonaws.com](http://mbm-canteen-hub-frontend.s3-website.ap-south-1.amazonaws.com) |
+| **Backend API Gateway** | Amazon API Gateway (HTTP API) | `https://gyxpq1r1mg.execute-api.ap-south-1.amazonaws.com` |
+| **API Health Check** | AWS Lambda via API Gateway | [https://gyxpq1r1mg.execute-api.ap-south-1.amazonaws.com/api/health](https://gyxpq1r1mg.execute-api.ap-south-1.amazonaws.com/api/health) |
+| **Menu API Endpoint** | Express Router via Lambda | [https://gyxpq1r1mg.execute-api.ap-south-1.amazonaws.com/api/menu](https://gyxpq1r1mg.execute-api.ap-south-1.amazonaws.com/api/menu) |
+| **AWS Region** | ap-south-1 (Mumbai) | `ap-south-1` |
+| **Lambda Function** | AWS Lambda | `mbm-canteen-api` |
+| **S3 Bucket** | Amazon S3 | `mbm-canteen-hub-frontend` |
+
+---
+
+## 📸 Live Application Preview
+
+![MBM Canteen Hub Live Deployment](screenshots/live-application.png)
+
+---
 
 ## Architecture
 
@@ -7,19 +27,19 @@ User (Browser)
       |
       |--- Frontend (HTML/CSS/JS)
       |         |
-      |    CloudFront CDN  <-- fast global delivery
-      |         |
-      |      S3 Bucket     <-- static React build files
+      |      S3 Bucket (Static Website Hosting)
+      |      http://mbm-canteen-hub-frontend.s3-website.ap-south-1.amazonaws.com
       |
       |--- API Calls (/api/*)
                 |
-         API Gateway (HTTP API)
+         API Gateway (HTTP API v2)
+         https://gyxpq1r1mg.execute-api.ap-south-1.amazonaws.com
                 |
-         AWS Lambda Function
+         AWS Lambda Function (mbm-canteen-api)
                 |
-         Express (serverless-http)
+         Express 5 (serverless-http + buffer parsing fix)
                 |
-          MongoDB Atlas
+          MongoDB Atlas (ac-wsdsaby-shard)
 ```
 
 ## Services Used
@@ -28,8 +48,7 @@ User (Browser)
 |---|---|---|
 | AWS Lambda | Runs Express backend on-demand | ~$0.20/million requests |
 | API Gateway (HTTP API) | HTTP front door to Lambda | ~$1/million requests |
-| S3 | Stores React static build files | ~$0.023/GB/month |
-| CloudFront | CDN — serves frontend globally | ~$0.01/GB transferred |
+| S3 | Stores and hosts React static build files | ~$0.023/GB/month |
 | MongoDB Atlas | Cloud database (free tier available) | Free (M0) |
 
 **Estimated total cost for a college project: $0–$2/month**
@@ -41,7 +60,7 @@ User (Browser)
 - AWS account (free tier is sufficient)
 - MongoDB Atlas account (free M0 cluster)
 - AWS CLI installed: `winget install Amazon.AWSCLI`
-- Node.js 22 installed
+- Node.js 20+ installed
 
 ---
 
@@ -83,13 +102,16 @@ Compress-Archive -Path . -DestinationPath ..\lambda-backend.zip -CompressionLeve
 | `MONGO_URI` | Your Atlas connection string |
 | `JWT_SECRET` | 64-character random secret |
 | `JWT_EXPIRE` | `7d` |
-| `FRONTEND_URL` | `https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net` |
+| `FRONTEND_URL` | `http://mbm-canteen-hub-frontend.s3-website.ap-south-1.amazonaws.com` |
 
 ---
 
 ## Step 4 — Upload Code to Lambda
 
-Code tab → Upload from → .zip file → upload `lambda-backend.zip`
+Code tab → Upload from → .zip file → upload `lambda-backend.zip` (contains `lambda.js`, `server.js`, `package.json`, `src/`, and `node_modules/`).
+
+> [!NOTE]
+> The backend contains a specialized middleware in `server.js` ensuring that `serverless-http` Buffer payloads are cleanly parsed in Express 5.
 
 ---
 
@@ -108,11 +130,11 @@ Code tab → Upload from → .zip file → upload `lambda-backend.zip`
 3. Name: `mbm-canteen-api-gateway`
 4. Routes: `$default` (Lambda handles all routing via Express)
 5. Stage: `$default` with Auto-deploy ON
-6. Copy the **Invoke URL**: `https://abc123.execute-api.ap-south-1.amazonaws.com`
+6. Live Invoke URL: `https://gyxpq1r1mg.execute-api.ap-south-1.amazonaws.com`
 
 **CORS (API Gateway → CORS):**
-- Allow Origin: `https://YOUR_CLOUDFRONT_DOMAIN.cloudfront.net`
-- Allow Headers: `Content-Type, Authorization`
+- Allow Origin: `http://mbm-canteen-hub-frontend.s3-website.ap-south-1.amazonaws.com`
+- Allow Headers: `content-type, authorization`
 - Allow Methods: `GET, POST, PUT, DELETE, OPTIONS`
 - Allow Credentials: `true`
 
@@ -121,8 +143,8 @@ Code tab → Upload from → .zip file → upload `lambda-backend.zip`
 ## Step 7 — Build Frontend
 
 Create `frontend/.env.production`:
-```
-VITE_API_URL=https://abc123.execute-api.ap-south-1.amazonaws.com/api
+```env
+VITE_API_URL=https://gyxpq1r1mg.execute-api.ap-south-1.amazonaws.com/api
 ```
 
 ```bash
@@ -130,11 +152,11 @@ cd frontend
 npm run build
 ```
 
-This creates `frontend/dist/`.
+This creates the production distribution at `frontend/dist/`.
 
 ---
 
-## Step 8 — Create S3 Bucket
+## Step 8 — Create S3 Bucket & Host Static Website
 
 1. S3 → **Create bucket** → name: `mbm-canteen-hub-frontend`
 2. Region: `ap-south-1`
@@ -142,6 +164,7 @@ This creates `frontend/dist/`.
 4. Properties → **Static website hosting** → Enable
    - Index document: `index.html`
    - Error document: `index.html`
+   - Website Endpoint: `http://mbm-canteen-hub-frontend.s3-website.ap-south-1.amazonaws.com`
 5. Permissions → **Bucket policy**:
 
 ```json
@@ -156,7 +179,7 @@ This creates `frontend/dist/`.
 }
 ```
 
-6. Upload dist files:
+6. Upload built frontend files:
 
 ```powershell
 aws s3 sync frontend/dist/ s3://mbm-canteen-hub-frontend --delete
@@ -164,34 +187,18 @@ aws s3 sync frontend/dist/ s3://mbm-canteen-hub-frontend --delete
 
 ---
 
-## Step 9 — Create CloudFront Distribution
-
-1. CloudFront → **Create distribution**
-2. Origin domain: your S3 bucket
-3. Viewer protocol: **Redirect HTTP to HTTPS**
-4. Default root object: `index.html`
-5. **Custom error responses** → Add:
-   - 403 → `/index.html` → 200
-   - 404 → `/index.html` → 200
-6. Create and wait ~10 minutes
-7. Copy domain: `https://d123abc.cloudfront.net`
-
-**Update Lambda env var:** `FRONTEND_URL` = `https://d123abc.cloudfront.net`
-**Update API Gateway CORS:** Allow Origin = `https://d123abc.cloudfront.net`
-
----
-
 ## Testing
 
 ```bash
 # Backend health check
-curl https://YOUR_API_GW_URL/api/health
+curl https://gyxpq1r1mg.execute-api.ap-south-1.amazonaws.com/api/health
 
 # Backend menu
-curl https://YOUR_API_GW_URL/api/menu
+curl https://gyxpq1r1mg.execute-api.ap-south-1.amazonaws.com/api/menu
 
 # Frontend
-# Open https://d123abc.cloudfront.net in browser
+# Open in browser:
+http://mbm-canteen-hub-frontend.s3-website.ap-south-1.amazonaws.com
 ```
 
 ---
@@ -211,7 +218,6 @@ aws lambda update-function-code --function-name mbm-canteen-api --zip-file fileb
 cd frontend
 npm run build
 aws s3 sync dist/ s3://mbm-canteen-hub-frontend --delete
-aws cloudfront create-invalidation --distribution-id YOUR_DIST_ID --paths "/*"
 ```
 
 ---
